@@ -39,6 +39,7 @@
 			</intent-filter>
 		</activity>
 		<service android:name="com.ajaxjs.nativescript.android.mqttv3.MqttService" android:exported="false"/>
+        <service android:name="com.ajaxjs.nativescript.android.mqttv5.MqttService" android:exported="false" />
 		<activity android:name="com.tns.ErrorReportActivity"/>
 	</application>
 </manifest>

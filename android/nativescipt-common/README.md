@@ -4,14 +4,14 @@ This is the common Java library project. Open the `android/nativescipt-common` d
 
 The NativeScript npm package is maintained separately in `nativescript-plugin/nativescipt-common`. Its `npm pack` and `npm publish` lifecycle builds this Gradle project and includes the runtime JAR automatically.
 
-Sibling Gradle projects under `android/` `nativescipt-mqtt-v3` and `nativescipt-mqtt-v5` can be added later for the MQTT libraries.
+The sibling projects `android/nativescipt-mqtt-v3` and `android/nativescipt-mqtt-v5` provide independent MQTT libraries.
 
 ## Build
 
 From this directory, run:
 
 ```powershell
-.\gradlew.bat :aj-nativescript:jar
+.\gradlew.bat :aj-nativescript:test :aj-nativescript:jar
 ```
 
 The resulting artifact is written to:

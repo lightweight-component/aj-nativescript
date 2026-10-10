@@ -74,10 +74,18 @@ npm pack
 prepack 自动构建 JAR、复制到 platforms/android、编译 TS 和声明文件。
 Java 单测在 Java 工程执行 `./gradlew test`。
 本地 demo 可安装生成的 `ajax-js-nativescript-mqtt-v3-0.1.0.tgz`。
-demo 底部“测试”tab 中的“MQTT 通讯测试”提供连接、一次性订阅、中文消息往返及停止后重启验证。
+demo 底部“测试”tab 中的“MQTT v3 通讯测试”提供连接、一次性订阅、中文消息往返及停止后重启验证。
 默认测试地址为调用方提供的 `tcp://159.75.215.222:1883`，不填写用户名密码；主题使用 `ajaxjs/demo/<时间戳>`。
 该地址只用于演示，不属于组件内置配置。
 
-完成验证并更新版本后可 `npm publish`，需有 @ajax-js 的发布权限。
+完成验证并更新版本后，在本目录执行：
+
+```powershell
+npm publish
+```
+
+需有 @ajax-js 的发布权限。npm publish 同样触发 prepack，自动构建 JAR 与 TS 产物，无需指定安装包文件名。
 手写原生声明随包发布；与 common 包没有运行时依赖。
 旧宿主 com.ajaxjs.android.mqttv5 与新包名不同，可以并存，但应用迁移时应避免同时连接相同 clientId。
+
+演示运行步骤见 [demo 文档](../../demo-app/README.md)，单独构建 JAR 及 Java 测试见 [Java 工程文档](../../android/nativescipt-mqtt-v3/README.md)。原生通讯需在 Android 真机或模拟器上验证。

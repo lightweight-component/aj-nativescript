@@ -1,7 +1,7 @@
 {
   "name": "@ajax-js/nativescript-mqtt-v5",
   "version": "0.1.0",
-  "description": "TypeScript package scaffold for MQTT integration in NativeScript 9",
+  "description": "Android MQTT 5.0 client for NativeScript, backed by Eclipse Paho",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -15,15 +15,18 @@
   "files": [
     "dist",
     "types",
-    "README.md"
+    "README.md",
+    "platforms"
   ],
   "sideEffects": false,
   "scripts": {
     "build": "npm run clean && tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "dev": "tsc -p tsconfig.json --watch",
-    "prepack": "npm run build",
-    "clean": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\""
+    "prepack": "npm run build:native && npm run build",
+    "clean": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\"",
+    "build:native": "node scripts/build-native.mjs",
+    "test": "npm run build && node --test scripts/mqtt.test.mjs"
   },
   "keywords": [
     "nativescript",
@@ -40,5 +43,10 @@
   },
   "publishConfig": {
     "access": "public"
+  },
+  "nativescript": {
+    "platforms": {
+      "android": "9.1.1"
+    }
   }
 }

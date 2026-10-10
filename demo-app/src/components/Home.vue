@@ -19,7 +19,8 @@
             <Label text="组件测试" fontSize="24" fontWeight="bold" />
             <Label text="选择一个测试，进入对应演示页面。" color="#64748b" textWrap="true" />
             <Button text="AES 加解密测试" @tap="openAes" />
-            <Button text="MQTT 通讯测试" @tap="openMqtt" />
+            <Button text="MQTT v3 通讯测试" @tap="openMqtt" />
+            <Button text="MQTT v5 通讯测试" @tap="openMqttV5" />
           </StackLayout>
         </Page>
       </Frame>
@@ -43,6 +44,7 @@ import { $navigateTo } from 'nativescript-vue';
 import { type EventData, TabView } from '@nativescript/core';
 import AesDemo from './AesDemo.vue';
 import MqttDemo from './MqttDemo.vue';
+import MqttV5Demo from './MqttV5Demo.vue';
 
 let initialized = false;
 
@@ -70,5 +72,11 @@ function openAes() {
  */
 function openMqtt() {
   $navigateTo(MqttDemo, { frame: 'tests-frame' });
+}
+/**
+ * 在测试 tab 内打开 MQTT 5 演示，保持底部导航可见。
+ */
+function openMqttV5() {
+  $navigateTo(MqttV5Demo, { frame: 'tests-frame' });
 }
 </script>

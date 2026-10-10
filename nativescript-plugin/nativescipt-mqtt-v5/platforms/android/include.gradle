@@ -1,0 +1,15 @@
+dependencies {
+    implementation 'org.eclipse.paho:org.eclipse.paho.mqttv5.client:1.2.5'
+}
+
+/**
+ * Paho v3 与 v5 都包含 OSGi bundle.properties，Android 运行时不使用此元数据。
+ * 排除该文件，允许宿主同时安装两个协议版本。
+ */
+android {
+    packagingOptions {
+        resources {
+            excludes += ['bundle.properties']
+        }
+    }
+}

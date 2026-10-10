@@ -1,0 +1,67 @@
+plugins {
+    id 'java-library'
+    id 'maven-publish'
+}
+
+group = providers.gradleProperty('group').get()
+version = providers.gradleProperty('version').get()
+
+base {
+    archivesName = 'aj-nativescript-mqtt-v5'
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+    withSourcesJar()
+    withJavadocJar()
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
+tasks.withType(Javadoc).configureEach {
+    options.encoding = 'UTF-8'
+    options.charSet = 'UTF-8'
+    options.docEncoding = 'UTF-8'
+}
+
+/**
+ * Android SDK classes are supplied by the host and are not packaged in the JAR.
+ */
+def sdkProperties = new Properties()
+def localPropertiesFile = rootProject.file('local.properties')
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.withInputStream { sdkProperties.load(it) }
+}
+def sdkDirectory = sdkProperties.getProperty('sdk.dir') ?:
+        System.getenv('ANDROID_HOME') ?: System.getenv('ANDROID_SDK_ROOT')
+def compileSdkVersion = providers.gradleProperty('androidCompileSdk').getOrElse('35')
+if (!sdkDirectory) {
+    throw new GradleException('Set sdk.dir in android/nativescipt-mqtt-v5/local.properties or set ANDROID_HOME to your Android SDK directory.')
+}
+def androidApiJar = new File(sdkDirectory, "platforms/android-${compileSdkVersion}/android.jar")
+if (!androidApiJar.isFile()) {
+    throw new GradleException("Android SDK platform ${compileSdkVersion} is missing: ${androidApiJar}. Install it in SDK Manager or set -PandroidCompileSdk=<installed API level>.")
+}
+
+dependencies {
+    api 'org.eclipse.paho:org.eclipse.paho.mqttv5.client:1.2.5'
+    compileOnly files(androidApiJar)
+    testCompileOnly files(androidApiJar)
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.11.4'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+            artifactId = 'aj-nativescript-mqtt-v5'
+        }
+    }
+}
