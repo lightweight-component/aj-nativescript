@@ -14,7 +14,7 @@ globalThis.com = { ajaxjs: { nativescript: { android: { crypto: {
 } } } } };
 registerHooks({ resolve(specifier, context, next) {
     if (specifier === '@nativescript/core')
-        return { url: 'data:text/javascript,export const Http=globalThis.__keystoreCore.Http;export const isAndroid=true;', shortCircuit: true };
+        return { url: 'data:text/javascript,export const Http=globalThis.__keystoreCore.Http;export const isAndroid=true;export const isIOS=false;', shortCircuit: true };
     return next(specifier, context);
 } });
 const { provisionAesKey, encryptJson, decryptJson } = await import('../dist/keystore.js');

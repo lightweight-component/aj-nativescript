@@ -259,3 +259,46 @@ declare namespace com.ajaxjs.nativescript.android {
 
     }
 }
+
+/**
+ * iOS bridge result. error is null on success; value is boolean, dictionary or text.
+ * Native methods return errors rather than throwing across the Objective-C boundary.
+ */
+declare class AjaxJSCryptoResult extends NSObject {
+    readonly value: any;
+    readonly error: string | null;
+}
+
+/**
+ * iOS 15+ Keychain/CryptoKit bridge, supplied by AjaxJSCommon.xcframework.
+ */
+declare class AjaxJSAes extends NSObject {
+    /**
+     * Imports a 16/24/32-byte standard Base64 key under a nonblank <=128-unit alias.
+     * Returns true or an error for invalid input, duplicate alias or Keychain failure.
+     */
+    static importKeyKeyBase64(alias: string, keyBase64: string): AjaxJSCryptoResult;
+    
+    /**
+     * Returns a boolean; invalid alias or Keychain query failure returns error.
+     */
+    static hasKey(alias: string): AjaxJSCryptoResult;
+
+    /**
+     * Returns true even if absent; invalid alias or Keychain deletion failure returns error.
+     */
+    static deleteKey(alias: string): AjaxJSCryptoResult;
+
+    /**
+     * Encrypts UTF-8 text; returns NSDictionary nonce/data in standard Base64.
+     * Random nonce is 12 bytes; data is ciphertext plus 16-byte tag, no AAD.
+     * Invalid alias, missing key or encryption failure returns error.
+     */
+    static encryptPlaintext(alias: string, plaintext: string): AjaxJSCryptoResult;
+
+    /**
+     * Returns authenticated UTF-8 text; nonce must be 12 bytes, data >=16 bytes.
+     * Invalid Base64, alias, length, missing key, invalid UTF-8 or tag returns error.
+     */
+    static decryptNonceBase64DataBase64(alias: string, nonceBase64: string, dataBase64: string): AjaxJSCryptoResult;
+}

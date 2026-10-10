@@ -26,6 +26,7 @@
     "@nativescript/vite": "~8.0.18",
     "@types/node": "^22.14.0",
     "@vitejs/plugin-vue": "^6.0.9",
+    "@vitejs/plugin-vue-jsx": "^5.1.6",
     "nativescript": "~9.1.2",
     "patch-package": "^8.0.1",
     "tailwindcss": "~4.1.3",

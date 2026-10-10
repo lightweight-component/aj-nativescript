@@ -59,7 +59,7 @@
 
 <script setup lang="ts">
 import { $navigateTo } from 'nativescript-vue';
-import { Dialogs, type EventData, TabView } from '@nativescript/core';
+import { ApplicationSettings, Dialogs, type EventData, TabView } from '@nativescript/core';
 import { text, pageClass, isDark, refreshSystemAppearance } from '../common/preferences';
 import Settings from './Settings.vue';
 import About from './About.vue';
@@ -70,7 +70,7 @@ import MqttV5Demo from './MqttV5Demo.vue';
 let initialized = false;
 
 /**
- * 首次加载完成后显示首页，避免子 Frame 的初始导航改变选中项。
+ * 首次加载完成后显示首页；自动验证时在测试 tab 内打开 AES 页面，保留底部切换。
  */
 function initializeTabs(args: EventData) {
   refreshSystemAppearance();
@@ -78,7 +78,10 @@ function initializeTabs(args: EventData) {
     return;
   initialized = true;
   setTimeout(() => {
-    (args.object as TabView).selectedIndex = 0;
+    const autoCheck = ApplicationSettings.getBoolean('aesAutoCheck', false);
+    (args.object as TabView).selectedIndex = autoCheck ? 1 : 0;
+    if (autoCheck)
+      openAes();
   }, 0);
 }
 

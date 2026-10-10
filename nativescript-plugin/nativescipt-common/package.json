@@ -27,11 +27,12 @@
   "scripts": {
     "build": "npm run clean && tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "npm run build && node --test scripts/keystore.test.mjs",
+    "test": "npm run build && node --test scripts/keystore.test.mjs scripts/ios-bridge.test.mjs",
     "dev": "tsc -p tsconfig.json --watch",
     "build:native": "node scripts/build-native.mjs",
-    "prepack": "npm run build:native && npm run build",
-    "clean": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\""
+    "prepack": "npm run build:native && node scripts/prepare-ios.mjs && npm run build",
+    "clean": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\"",
+    "build:ios": "node scripts/build-ios.mjs"
   },
   "keywords": [
     "nativescript",
@@ -55,7 +56,8 @@
   },
   "nativescript": {
     "platforms": {
-      "android": "9.1.1"
+      "android": "9.1.1",
+      "ios": "9.1.0"
     }
   }
 }

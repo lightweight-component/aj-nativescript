@@ -33,8 +33,11 @@ def localPropertiesFile = rootProject.file('local.properties')
 if (localPropertiesFile.exists()) {
     localPropertiesFile.withInputStream { sdkProperties.load(it) }
 }
-def sdkDirectory = sdkProperties.getProperty('sdk.dir') ?:
-        System.getenv('ANDROID_HOME') ?: System.getenv('ANDROID_SDK_ROOT')
+/*
+ * Environment overrides machine-local SDK paths for cross-platform builds.
+ */
+def sdkDirectory = System.getenv('ANDROID_HOME') ?: System.getenv('ANDROID_SDK_ROOT') ?:
+        sdkProperties.getProperty('sdk.dir')
 def compileSdkVersion = providers.gradleProperty('androidCompileSdk').getOrElse('35')
 if (!sdkDirectory) {
     throw new GradleException('Set sdk.dir in android/nativescipt-common/local.properties or set ANDROID_HOME to your Android SDK directory.')
