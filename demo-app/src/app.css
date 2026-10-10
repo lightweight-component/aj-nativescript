@@ -14,3 +14,22 @@ ActionBar {
 .gradient-light-purple {
   background: linear-gradient(to bottom, #6544b7, #251353);
 }
+.prototype-page { background-color: #f3f5f8; color: #182235; }
+.prototype-page ActionBar { background-color: #ffffff; color: #182235; }
+.prototype-page Label { color: #182235; }
+.menu-card, .login-card, .about-card { background-color: #ffffff; border-radius: 16; }
+.login-card { padding: 24; }
+.menu-row { padding: 16 20; min-height: 64; font-size: 16; }
+.menu-divider { border-top-width: 1; border-top-color: #edf0f5; }
+.prototype-page .muted { color: #78869a; font-size: 14; }
+.prototype-page .chevron { color: #94a3b8; font-size: 28; margin-left: 14; vertical-align: middle; }
+.prototype-page .avatar { background-color: #eaf1ff; color: #2563eb; border-radius: 28; width: 56; height: 56; text-align: center; font-size: 20; font-weight: bold; }
+.prototype-page .link { color: #2563eb; font-size: 15; }
+.cache-button { font-size: 13; color: #2563eb; background-color: #eaf1ff; border-radius: 8; padding: 4 12; margin: 0; }
+.theme-dark.prototype-page, .theme-dark Page { background-color: #0f172a; color: #e2e8f0; }
+.theme-dark ActionBar, .theme-dark .menu-card, .theme-dark .login-card, .theme-dark .about-card { background-color: #1e293b; color: #e2e8f0; }
+.theme-dark Label { color: #e2e8f0; }
+.theme-dark .muted, .theme-dark .chevron { color: #94a3b8; }
+.theme-dark .menu-divider { border-top-color: #334155; }
+.theme-dark .avatar, .theme-dark .cache-button { background-color: #243b60; color: #93c5fd; }
+.theme-dark .link { color: #93c5fd; }

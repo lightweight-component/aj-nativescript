@@ -2,6 +2,15 @@
 
 NativeScript 9 + Vue 3 + Vite 演示应用，用于验证 common、MQTT v3 和 MQTT v5 插件。
 
+## 原型界面
+
+底部固定“首页”“测试”“我的”三个 tab。“我的”提供点击登录区域，以及设置、关于菜单；登录目前为入口提示，后续接入业务登录。
+
+- 设置：简体中文、正体中文、英文；亮色、暗黑、跟随系统；清除临时缓存。
+- 关于：显示官网 www.ajaxjs.com，点击后在应用内 WebView 打开，支持重新加载。
+
+语言和外观选择会保存，并立即更新原型界面。AES、MQTT 独立测试页面保留现有文案。清除缓存仅删除应用临时目录，保留设置、应用数据和 Keystore 密钥。
+
 ## 开发环境
 
 需要 Node.js、npm、JDK 17、Android SDK Platform 35 和 Android 8.0+ 真机或模拟器。Node.js 版本需满足项目所用 NativeScript 9 / Vite 8 的要求。SDK 路径通过 ANDROID_HOME 或各 Java 工程的 local.properties 配置。

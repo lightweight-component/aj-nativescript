@@ -1,38 +1,56 @@
 <template>
-  <TabView :selectedIndex="0" @loaded="initializeTabs" androidTabsPosition="bottom" tabTextColor="#64748b" selectedTabTextColor="#2563eb" tabBackgroundColor="#ffffff">
-    <TabViewItem title="首页">
+  <TabView :selectedIndex="0" @loaded="initializeTabs" androidTabsPosition="bottom" :class="pageClass" :tabTextColor="isDark ? '#94a3b8' : '#64748b'" selectedTabTextColor="#3b82f6" :tabBackgroundColor="isDark ? '#1e293b' : '#ffffff'">
+    <TabViewItem :title="text.home">
       <Frame id="home-frame">
-        <Page backgroundColor="#f3f5f8">
-          <ActionBar title="首页" />
+        <Page :class="pageClass" :statusBarStyle="isDark ? 'light' : 'dark'">
+          <ActionBar :title="text.home" />
           <StackLayout padding="24" spacing="16">
-            <Label text="NativeScript 组件演示" fontSize="24" fontWeight="bold" textWrap="true" />
-            <Label text="在“测试”中验证 AES 加解密和 MQTT 通讯。" fontSize="16" color="#64748b" textWrap="true" />
+            <Label :text="text.intro" fontSize="24" fontWeight="bold" textWrap="true" />
+            <Label :text="text.homeHint" fontSize="16" class="muted" textWrap="true" />
           </StackLayout>
         </Page>
       </Frame>
     </TabViewItem>
-    <TabViewItem title="测试">
+    <TabViewItem :title="text.tests">
       <Frame id="tests-frame">
-        <Page backgroundColor="#f3f5f8">
-          <ActionBar title="测试" />
+        <Page :class="pageClass" :statusBarStyle="isDark ? 'light' : 'dark'">
+          <ActionBar :title="text.tests" />
           <StackLayout padding="24" spacing="16">
-            <Label text="组件测试" fontSize="24" fontWeight="bold" />
-            <Label text="选择一个测试，进入对应演示页面。" color="#64748b" textWrap="true" />
-            <Button text="AES 加解密测试" @tap="openAes" />
-            <Button text="MQTT v3 通讯测试" @tap="openMqtt" />
-            <Button text="MQTT v5 通讯测试" @tap="openMqttV5" />
+            <Label :text="text.testTitle" fontSize="24" fontWeight="bold" />
+            <Label :text="text.testHint" class="muted" textWrap="true" />
+            <Button :text="text.aes" @tap="openAes" />
+            <Button :text="text.mqtt3" @tap="openMqtt" />
+            <Button :text="text.mqtt5" @tap="openMqttV5" />
           </StackLayout>
         </Page>
       </Frame>
     </TabViewItem>
-    <TabViewItem title="我的">
+    <TabViewItem :title="text.mine">
       <Frame id="profile-frame">
-        <Page backgroundColor="#f3f5f8">
-          <ActionBar title="我的" />
-          <StackLayout padding="24" spacing="16">
-            <Label text="关于演示项目" fontSize="24" fontWeight="bold" />
-            <Label text="用于验证 NativeScript 公共组件和 MQTT 组件。" color="#64748b" textWrap="true" />
-          </StackLayout>
+        <Page :class="pageClass" :statusBarStyle="isDark ? 'light' : 'dark'">
+          <ActionBar :title="text.mine" />
+          <ScrollView>
+            <StackLayout padding="20">
+              <GridLayout columns="auto,*,auto" class="login-card" @tap="login">
+                <Label text="AJ" class="avatar" verticalAlignment="middle" />
+                <StackLayout col="1" marginLeft="18" verticalAlignment="middle">
+                  <Label :text="text.login" fontSize="22" fontWeight="bold" />
+                  <Label :text="text.loginHint" class="muted" marginTop="6" textWrap="true" />
+                </StackLayout>
+                <Label col="2" text="›" class="chevron" />
+              </GridLayout>
+              <StackLayout class="menu-card" marginTop="24">
+                <GridLayout columns="*,auto" class="menu-row" @tap="openSettings">
+                  <Label :text="text.settings" verticalAlignment="middle" />
+                  <Label col="1" text="›" class="chevron" />
+                </GridLayout>
+                <GridLayout columns="*,auto" class="menu-row menu-divider" @tap="openAbout">
+                  <Label :text="text.about" verticalAlignment="middle" />
+                  <Label col="1" text="›" class="chevron" />
+                </GridLayout>
+              </StackLayout>
+            </StackLayout>
+          </ScrollView>
         </Page>
       </Frame>
     </TabViewItem>
@@ -41,7 +59,10 @@
 
 <script setup lang="ts">
 import { $navigateTo } from 'nativescript-vue';
-import { type EventData, TabView } from '@nativescript/core';
+import { Dialogs, type EventData, TabView } from '@nativescript/core';
+import { text, pageClass, isDark, refreshSystemAppearance } from '../common/preferences';
+import Settings from './Settings.vue';
+import About from './About.vue';
 import AesDemo from './AesDemo.vue';
 import MqttDemo from './MqttDemo.vue';
 import MqttV5Demo from './MqttV5Demo.vue';
@@ -52,6 +73,7 @@ let initialized = false;
  * 首次加载完成后显示首页，避免子 Frame 的初始导航改变选中项。
  */
 function initializeTabs(args: EventData) {
+  refreshSystemAppearance();
   if (initialized)
     return;
   initialized = true;
@@ -78,5 +100,25 @@ function openMqtt() {
  */
 function openMqttV5() {
   $navigateTo(MqttV5Demo, { frame: 'tests-frame' });
+}
+/**
+ * 登录区域暂展示入口提示，后续接入业务登录。
+ */
+function login() {
+  Dialogs.alert({ title: text.value.login, message: text.value.loginPending, okButtonText: text.value.ok });
+}
+
+/**
+ * 在“我的”tab 内打开设置。
+ */
+function openSettings() {
+  $navigateTo(Settings, { frame: 'profile-frame' });
+}
+
+/**
+ * 在“我的”tab 内打开关于。
+ */
+function openAbout() {
+  $navigateTo(About, { frame: 'profile-frame' });
 }
 </script>
