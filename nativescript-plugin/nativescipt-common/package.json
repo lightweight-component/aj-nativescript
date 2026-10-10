@@ -1,0 +1,61 @@
+{
+  "name": "@ajax-js/nativescript-common",
+  "version": "0.1.0",
+  "description": "Shared TypeScript utilities and AES-GCM helpers for NativeScript 9",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./aes": {
+      "types": "./dist/json_body_cipher/aes.d.ts",
+      "import": "./dist/json_body_cipher/aes.js",
+      "default": "./dist/json_body_cipher/aes.js"
+    }
+  },
+  "files": [
+    "dist",
+    "types",
+    "platforms",
+    "README.md"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "npm run clean && tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "npm run build && node --test scripts/keystore.test.mjs",
+    "dev": "tsc -p tsconfig.json --watch",
+    "build:native": "node scripts/build-native.mjs",
+    "prepack": "npm run build:native && npm run build",
+    "clean": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\""
+  },
+  "keywords": [
+    "nativescript",
+    "typescript",
+    "utilities",
+    "aes-gcm"
+  ],
+  "dependencies": {
+    "@noble/ciphers": "^2.4.0"
+  },
+  "peerDependencies": {
+    "@nativescript/core": "^9.1.3"
+  },
+  "devDependencies": {
+    "@nativescript/core": "~9.1.3",
+    "@nativescript/types": "~9.1.4",
+    "typescript": "~6.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "nativescript": {
+    "platforms": {
+      "android": "9.1.1"
+    }
+  }
+}

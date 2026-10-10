@@ -1,0 +1,52 @@
+{
+  "name": "@ajax-js/nativescript-mqtt-v3",
+  "version": "0.1.0",
+  "description": "Android MQTT 3.1.1 client for NativeScript, backed by Eclipse Paho",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "types",
+    "README.md",
+    "platforms"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "npm run clean && tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "dev": "tsc -p tsconfig.json --watch",
+    "prepack": "npm run build:native && npm run build",
+    "clean": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\"",
+    "build:native": "node scripts/build-native.mjs",
+    "test": "npm run build && node --test scripts/mqtt.test.mjs"
+  },
+  "keywords": [
+    "nativescript",
+    "typescript",
+    "mqtt"
+  ],
+  "peerDependencies": {
+    "@nativescript/core": "^9.1.3"
+  },
+  "devDependencies": {
+    "@nativescript/core": "~9.1.3",
+    "@nativescript/types": "~9.1.4",
+    "typescript": "~6.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "nativescript": {
+    "platforms": {
+      "android": "9.1.1"
+    }
+  }
+}

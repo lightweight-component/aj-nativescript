@@ -9,6 +9,8 @@
     "postinstall": "patch-package"
   },
   "dependencies": {
+    "@ajax-js/nativescript-common": "file:../nativescript-plugin/nativescipt-common/ajax-js-nativescript-common-0.1.0.tgz",
+    "@ajax-js/nativescript-mqtt-v3": "file:../nativescript-plugin/nativescipt-mqtt-v3/ajax-js-nativescript-mqtt-v3-0.1.0.tgz",
     "@nativescript/core": "~9.1.3",
     "@triniwiz/nativescript-image-cache-it": "^8.0.1",
     "@valor/nativescript-websockets": "^2.0.3",
@@ -18,9 +20,9 @@
   "devDependencies": {
     "@nativescript/android": "~9.1.1",
     "@nativescript/ios": "~9.1.0",
+    "@nativescript/tailwind": "~4.1.0",
     "@nativescript/types": "~9.1.4",
     "@nativescript/vite": "~8.0.18",
-    "@nativescript/tailwind": "~4.1.0",
     "@types/node": "^22.14.0",
     "@vitejs/plugin-vue": "^6.0.9",
     "nativescript": "~9.1.2",

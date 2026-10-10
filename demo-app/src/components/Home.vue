@@ -1,75 +1,74 @@
 <template>
-  <Frame>
-    <Page class="bg-[#251353]" statusBarStyle="light">
-      <ActionBar>
-        <Label text="ViteConf 2025" class="font-bold text-lg" />
-      </ActionBar>
-
-      <GridLayout rows="auto, *">
-        <ImageCacheIt
-          src="https://media.licdn.com/dms/image/v2/D4E12AQGNN12uyxHB9A/article-cover_image-shrink_720_1280/B4EZenL8YRHsAI-/0/1750856620336?e=2147483647&v=beta&t=9X5KA3DAJsHnQ1BE26Qeduzg6HNoPKeQf5GwZNOIoSU"
-          stretch="aspectFill" class="h-60 align-top" />
-        <GridLayout row="1" rows="*,auto,*" class="gradient-purple p-6">
-          <Label class="text-xl align-middle text-center text-[#77c9fa] font-bold" :text="message" />
-
-          <Button row="1" @tap="enterNow"
-            class="p-6 text-white font-bold border-4 border-[#77c9fa] rounded-lg text-xl gradient-light-purple"
-            horizontalAlignment="center">
-            Enter Now
-          </Button>
-        </GridLayout>
-      </GridLayout>
-    </Page>
-  </Frame>
+  <TabView :selectedIndex="0" @loaded="initializeTabs" androidTabsPosition="bottom" tabTextColor="#64748b" selectedTabTextColor="#2563eb" tabBackgroundColor="#ffffff">
+    <TabViewItem title="首页">
+      <Frame id="home-frame">
+        <Page backgroundColor="#f3f5f8">
+          <ActionBar title="首页" />
+          <StackLayout padding="24" spacing="16">
+            <Label text="NativeScript 组件演示" fontSize="24" fontWeight="bold" textWrap="true" />
+            <Label text="在“测试”中验证 AES 加解密和 MQTT 通讯。" fontSize="16" color="#64748b" textWrap="true" />
+          </StackLayout>
+        </Page>
+      </Frame>
+    </TabViewItem>
+    <TabViewItem title="测试">
+      <Frame id="tests-frame">
+        <Page backgroundColor="#f3f5f8">
+          <ActionBar title="测试" />
+          <StackLayout padding="24" spacing="16">
+            <Label text="组件测试" fontSize="24" fontWeight="bold" />
+            <Label text="选择一个测试，进入对应演示页面。" color="#64748b" textWrap="true" />
+            <Button text="AES 加解密测试" @tap="openAes" />
+            <Button text="MQTT 通讯测试" @tap="openMqtt" />
+          </StackLayout>
+        </Page>
+      </Frame>
+    </TabViewItem>
+    <TabViewItem title="我的">
+      <Frame id="profile-frame">
+        <Page backgroundColor="#f3f5f8">
+          <ActionBar title="我的" />
+          <StackLayout padding="24" spacing="16">
+            <Label text="关于演示项目" fontSize="24" fontWeight="bold" />
+            <Label text="用于验证 NativeScript 公共组件和 MQTT 组件。" color="#64748b" textWrap="true" />
+          </StackLayout>
+        </Page>
+      </Frame>
+    </TabViewItem>
+  </TabView>
 </template>
 
-<script lang="ts" setup>
-import type { Button, EventData } from "@nativescript/core";
-import { ref, computed, onMounted, onUnmounted } from "nativescript-vue";
-import { InAppBrowser } from 'nativescript-inappbrowser';
+<script setup lang="ts">
+import { $navigateTo } from 'nativescript-vue';
+import { type EventData, TabView } from '@nativescript/core';
+import AesDemo from './AesDemo.vue';
+import MqttDemo from './MqttDemo.vue';
 
-declare var com: any;
-const counter = ref(0);
-const message = computed(() => {
-  return `Hype Counter: ${counter.value}`;
-});
+let initialized = false;
 
-// HMR plugins or native platform APIs
-function enterNow(evt: EventData) {
-  InAppBrowser.open("https://viteconf.amsterdam");
-  return;
-
-  // You can also use native platform APIs directly
-  // Try commenting above and uncommenting below to see it in action
-  const url = "https://viteconf.amsterdam";
-
-  if (__APPLE__) {
-    const nsUrl = NSURL.URLWithString(url);
-    const app = UIApplication.sharedApplication;
-    app.openURLOptionsCompletionHandler(nsUrl, NSDictionary.new(), (success: boolean) => {
-      // Handle success or failure
-    });
-  } else {
-    const nativeApp = com.tns.NativeScriptApplication.getInstance();
-    const context = nativeApp.getApplicationContext() as android.content.Context;
-    const intent = new android.content.Intent(
-      android.content.Intent.ACTION_VIEW,
-      android.net.Uri.parse(url.trim())
-    );
-    intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
-    context.startActivity(intent);
-  }
+/**
+ * 首次加载完成后显示首页，避免子 Frame 的初始导航改变选中项。
+ */
+function initializeTabs(args: EventData) {
+  if (initialized)
+    return;
+  initialized = true;
+  setTimeout(() => {
+    (args.object as TabView).selectedIndex = 0;
+  }, 0);
 }
 
-let interval: any;
+/**
+ * 在测试 tab 内打开 AES 演示，保持底部导航可见。
+ */
+function openAes() {
+  $navigateTo(AesDemo, { frame: 'tests-frame' });
+}
 
-onMounted(() => {
-  console.log("mounted");
-  interval = setInterval(() => counter.value++, 20);
-});
-
-onUnmounted(() => {
-  console.log("unmounted");
-  clearInterval(interval);
-});
+/**
+ * 在测试 tab 内打开 MQTT 演示，保持底部导航可见。
+ */
+function openMqtt() {
+  $navigateTo(MqttDemo, { frame: 'tests-frame' });
+}
 </script>

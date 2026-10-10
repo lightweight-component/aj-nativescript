@@ -1,9 +1,6 @@
-import { createApp, registerElement } from "nativescript-vue";
-import { ImageCacheIt } from "@triniwiz/nativescript-image-cache-it";
-import { initGlobals } from "./globals";
+import { createApp } from 'nativescript-vue';
+import { initGlobals } from './globals';
+import Home from './components/Home.vue';
+
 initGlobals();
-
-import Home from "./components/Home.vue";
-
-registerElement("ImageCacheIt", () => ImageCacheIt);
 createApp(Home).start();

@@ -38,6 +38,7 @@
 				<category android:name="android.intent.category.LAUNCHER" />
 			</intent-filter>
 		</activity>
+		<service android:name="com.ajaxjs.nativescript.android.mqttv3.MqttService" android:exported="false"/>
 		<activity android:name="com.tns.ErrorReportActivity"/>
 	</application>
 </manifest>
