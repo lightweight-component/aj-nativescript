@@ -6,7 +6,7 @@
       <ScrollView>
         <StackLayout padding="20" spacing="12">
           <Label text="AES 密钥管理与 JSON 加解密" fontSize="22" fontWeight="bold" textWrap="true" />
-          <Label text="仅支持 Android 8.0+。JWT 和密钥仅用于本次操作，不保存到文件。" textWrap="true" />
+          <Label text="支持 Android 8.0+ 和 iOS 15+。JWT 和密钥仅用于本次操作，不保存到文件。" textWrap="true" />
           <Label :text="status" textWrap="true" color="#245a86" />
           <ActivityIndicator :busy="busy" :visibility="busy ? 'visible' : 'collapsed'" />
           <Button text="运行本地加解密验证" :isEnabled="!busy" @tap="selfCheck" />
@@ -42,8 +42,8 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, $navigateBack } from 'nativescript-vue';
-import { confirm } from '@nativescript/core';
+import { ref, onMounted, $navigateBack } from 'nativescript-vue';
+import { confirm, ApplicationSettings } from '@nativescript/core';
 import { provisionAesKey, importAesKey, hasAesKey, deleteAesKey, encryptJson, decryptJson, type EncryptedBody } from '@ajax-js/nativescript-common';
 
 /**
@@ -52,6 +52,8 @@ import { provisionAesKey, importAesKey, hasAesKey, deleteAesKey, encryptJson, de
 function back() {
   $navigateBack({ frame: 'tests-frame' });
 }
+
+import vectors from '../common/aes-vectors.json';
 
 const endpoint = ref('');
 const jwt = ref('');
@@ -68,24 +70,51 @@ function selfCheck() {
   void run(() => {
     const testAlias = `ajaxjs.aes.check-${Date.now()}`;
     try {
-      const bytes = Array.create('byte', 32);
-      new java.security.SecureRandom().nextBytes(bytes);
-      importAesKey(testAlias, java.util.Base64.getEncoder().encodeToString(bytes));
-
-      for (let i = 0; i < bytes.length; i++)
-        bytes[i] = 0;
+      /*
+       * Public test key only; never use this fixed key for application data.
+       */
+      const testKey = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=';
+      importAesKey(testAlias, testKey);
 
       if (!hasAesKey(testAlias))
         throw new Error('导入验证失败');
 
+      for (const invalidKey of ['!', 'AA==', '']) {
+        let invalidRejected = false;
+        try {
+          importAesKey(`${testAlias}-invalid`, invalidKey);
+        } catch {
+          invalidRejected = true;
+        }
+        if (!invalidRejected)
+          throw new Error('无效密钥未被拒绝');
+      }
+
       let rejected = false;
 
       try {
-        importAesKey(testAlias, java.util.Base64.getEncoder().encodeToString(bytes));
+        importAesKey(testAlias, testKey);
       } catch { rejected = true; }
 
       if (!rejected)
         throw new Error('重复别名未被拒绝');
+
+      for (const vector of vectors) {
+        const vectorAlias = `${testAlias}-${vector.size}`;
+        try {
+          importAesKey(vectorAlias, vector.key);
+          const decoded = decryptJson(vectorAlias, vector);
+          if (JSON.stringify(decoded) !== JSON.stringify({ message: '中文 🔐', count: 1 }))
+            throw new Error('Android → iOS 互通失败');
+          const result = encryptJson(vectorAlias, decoded);
+          /*
+           * Only public zero-key test vectors are emitted for JVM verification.
+           */
+          console.log(`AES_INTEROP:${JSON.stringify({ size: vector.size, ...result })}`);
+        } finally {
+          deleteAesKey(vectorAlias);
+        }
+      }
 
       const value = { message: '中文 🔐', count: 1 };
       const first = encryptJson(testAlias, value);
@@ -96,6 +125,23 @@ function selfCheck() {
 
       if (JSON.stringify(decryptJson(testAlias, first)) !== JSON.stringify(value))
         throw new Error('往返验证失败');
+
+      for (const value of [null, [], {}, '中文', 123, true]) {
+        const body = encryptJson(testAlias, value);
+        if (JSON.stringify(decryptJson(testAlias, body)) !== JSON.stringify(value))
+          throw new Error('JSON 类型验证失败');
+      }
+      for (const body of [{ nonce: 'AA==', data: first.data }, { nonce: first.nonce, data: 'AA==' },
+          { nonce: '!', data: first.data }]) {
+        let invalidRejected = false;
+        try {
+          decryptJson(testAlias, body);
+        } catch {
+          invalidRejected = true;
+        }
+        if (!invalidRejected)
+          throw new Error('无效消息未被拒绝');
+      }
 
       rejected = false;
       const tampered = { ...first, data: (first.data[0] === 'A' ? 'B' : 'A') + first.data.slice(1) };
@@ -118,21 +164,32 @@ function selfCheck() {
 
       if (!rejected)
         throw new Error('删除后仍可解密');
-      status.value = '本地验证通过：导入、重复拒绝、中文往返、新 nonce、篡改拒绝及删除';
+      console.log('AES_SELF_CHECK:PASS');
+      status.value = '本地验证通过：Android 互通、导入、重复拒绝、中文往返、新 nonce、篡改拒绝及删除';
     } finally {
       deleteAesKey(testAlias);
     }
   });
 }
 
+/*
+ * Opt-in launch verification on the actual AES page for simulator automation.
+ */
+onMounted(() => {
+  if (ApplicationSettings.getBoolean('aesAutoCheck', false))
+    selfCheck();
+});
+
 async function run(action: () => void | Promise<void>) {
-  if (busy.value) return;
+  if (busy.value)
+    return;
   busy.value = true;
   error.value = '';
 
   try {
     await action();
   } catch (cause) {
+    console.log('AES_SELF_CHECK:FAIL');
     error.value = cause instanceof Error ? cause.message : '操作失败，请检查输入和密钥状态。';
   } finally {
     busy.value = false;

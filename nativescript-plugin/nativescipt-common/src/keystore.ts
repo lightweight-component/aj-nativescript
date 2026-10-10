@@ -1,4 +1,4 @@
-import { Http, isAndroid } from '@nativescript/core';
+import { Http, isAndroid, isIOS } from '@nativescript/core';
 
 /**
  * AES-GCM 消息体，不包含密钥、密钥别名或 keyId。
@@ -47,15 +47,43 @@ export interface ProvisionKeyResult {
 }
 
 function nativeCrypto() {
-    if (!isAndroid)
-        throw new Error('Android Keystore is only supported on Android.');
+    if (isAndroid)
+        return com.ajaxjs.nativescript.android.crypto;
 
-    return com.ajaxjs.nativescript.android.crypto;
+    if (isIOS) {
+        if (typeof AjaxJSAes === 'undefined')
+            throw new Error('AjaxJSCommon XCFramework is not installed.');
+        return {
+            AesKeyStore: {
+                importKey: (alias: string, key: string) => iosValue(AjaxJSAes.importKeyKeyBase64(alias, key)),
+                hasKey: (alias: string) => Boolean(iosValue(AjaxJSAes.hasKey(alias))),
+                deleteKey: (alias: string) => iosValue(AjaxJSAes.deleteKey(alias))
+            },
+            JsonBodyCipher: {
+                encrypt: (alias: string, text: string) => {
+                    const value = iosValue(AjaxJSAes.encryptPlaintext(alias, text)) as NSDictionary<string, string>;
+                    
+                    return { getNonce: () => value.objectForKey('nonce'), getData: () => value.objectForKey('data') };
+                },
+                decrypt: (alias: string, nonce: string, data: string) =>
+                    iosValue(AjaxJSAes.decryptNonceBase64DataBase64(alias, nonce, data)) as string
+            }
+        };
+    }
+
+    throw new Error('AES key storage requires Android or iOS.');
+}
+
+function iosValue(result: AjaxJSCryptoResult): any {
+    if (result.error)
+        throw new Error(result.error);
+
+    return result.value;
 }
 
 /**
- * 将标准 Base64 AES 密钥导入 Android Keystore；已有别名拒绝覆盖，轮换时使用新别名。原始密钥暂时经过内存，请勿记录日志或持久化。
- * 仅支持 Android；其他平台调用会抛出异常。
+ * 将标准 Base64 AES 密钥导入 Android Keystore 或 iOS Keychain；已有别名拒绝覆盖，轮换时使用新别名。原始密钥暂时经过内存，请勿记录日志或持久化。
+ * 支持 Android 8.0+ 和 iOS 15+；其他平台调用会抛出异常。
  *
  * @param alias 非空白密钥别名，最多 128 个字符。
  * @param keyBase64 标准 Base64 编码的密钥，解码后必须为 16、24 或 32 字节。
@@ -68,7 +96,7 @@ export function importAesKey(alias: string, keyBase64: string): void {
 
 /**
  * 检查指定别名是否存在；存在不保证后续加解密成功。
- * 仅支持 Android；其他平台调用会抛出异常。
+ * 支持 Android 8.0+ 和 iOS 15+；其他平台调用会抛出异常。
  *
  * @param alias 非空白密钥别名，最多 128 个字符。
  * @returns 存在为 true，否则为 false。
@@ -80,7 +108,7 @@ export function hasAesKey(alias: string): boolean {
 
 /**
  * 删除密钥；不存在时不执行操作。删除后旧密文需重新导入相同密钥才能解密。
- * 仅支持 Android；其他平台调用会抛出异常。
+ * 支持 Android 8.0+ 和 iOS 15+；其他平台调用会抛出异常。
  *
  * @param alias 非空白密钥别名，最多 128 个字符。
  * @returns 无返回值。
@@ -91,12 +119,12 @@ export function deleteAesKey(alias: string): void {
 }
 
 /**
- * 序列化 JSON 值并使用 Android Keystore AES-GCM 密钥加密，每次生成新 nonce。遵循 JSON.stringify 的转换规则，包括省略对象中的 undefined 属性。
+ * 序列化 JSON 值并使用原生安全存储中的 AES-GCM 密钥加密，每次生成新 nonce。遵循 JSON.stringify 的转换规则，包括省略对象中的 undefined 属性。
  *
  * @param alias 已导入的 AES 密钥别名，非空白且最多 128 个字符。
  * @param value 可 JSON 序列化的值；循环引用、BigInt 或顶层 undefined 等会失败。
  * @returns Base64 nonce 与密文，密文末尾含 16 字节认证标签。
- * @throws 非 Android 平台、序列化失败、密钥不存在或加密失败时抛出异常。
+ * @throws 不支持的平台、序列化失败、密钥不存在或加密失败时抛出异常。
  */
 export function encryptJson(alias: string, value: unknown): EncryptedBody {
     const plaintext = JSON.stringify(value);
@@ -116,7 +144,7 @@ export function encryptJson(alias: string, value: unknown): EncryptedBody {
  * @param alias 已导入的 AES 密钥别名，非空白且最多 128 个字符。
  * @param body 包含标准 Base64 nonce 和密文及认证标签的消息体。
  * @returns JSON 解析结果，以 T 类型返回。
- * @throws 非 Android 平台、消息体无效、密钥不存在、认证失败或 JSON 解析失败时抛出异常。
+ * @throws 不支持的平台、消息体无效、密钥不存在、认证失败或 JSON 解析失败时抛出异常。
  */
 export function decryptJson<T = unknown>(alias: string, body: EncryptedBody): T {
     if (!body || typeof body.nonce !== 'string' || typeof body.data !== 'string')
@@ -131,7 +159,7 @@ export function decryptJson<T = unknown>(alias: string, body: EncryptedBody): T 
  *
  * @param options 请求地址、调用方提供的 JWT 及可选超时；组件不负责登录或刷新 JWT。
  * @returns 导入成功后返回 keyId 和 ajaxjs.aes.${keyId} 别名。
- * @throws 非 Android 平台、参数无效、网络错误、非 2xx 状态、响应无效或导入失败时 Promise 拒绝。
+ * @throws 不支持的平台、参数无效、网络错误、非 2xx 状态、响应无效或导入失败时 Promise 拒绝。
  */
 export async function provisionAesKey(options: ProvisionKeyOptions): Promise<ProvisionKeyResult> {
     nativeCrypto();

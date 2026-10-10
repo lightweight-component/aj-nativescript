@@ -8,12 +8,15 @@ const androidRoot = path.resolve(root, '../../android/nativescipt-common');
 const result = process.platform === 'win32'
     ? spawnSync('cmd.exe', ['/d', '/c', 'gradlew.bat :aj-nativescript:jar --console=plain'], { cwd: androidRoot, stdio: 'inherit' })
     : spawnSync('sh', ['./gradlew', ':aj-nativescript:jar', '--console=plain'], { cwd: androidRoot, stdio: 'inherit' });
-if (result.error) throw result.error;
-if (result.status !== 0) process.exit(result.status ?? 1);
+if (result.error)
+    throw result.error;
+if (result.status !== 0)
+    process.exit(result.status ?? 1);
 const target = path.join(root, 'platforms/android');
 mkdirSync(target, { recursive: true });
 const version = readFileSync(path.join(androidRoot, 'gradle.properties'), 'utf8')
     .match(/^version\s*=\s*([A-Za-z0-9._-]+)\s*$/m)?.[1];
-if (!version) throw new Error('Missing or invalid version in android/gradle.properties.');
+if (!version)
+    throw new Error('Missing or invalid version in android/gradle.properties.');
 copyFileSync(path.join(androidRoot, `aj-nativescript/build/libs/aj-nativescript-${version}.jar`),
     path.join(target, 'aj-nativescript.jar'));

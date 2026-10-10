@@ -71,3 +71,39 @@ npm install ../nativescript-plugin/nativescipt-mqtt-v5/ajax-js-nativescript-mqtt
 nativescript.config.ts 选择 Vite 构建，vite.config.mts 配置 Vue 与 NativeScript 插件。
 
 参考：[原始演示工程](https://github.com/NativeScript/ns-vue-vite-demo)、[NativeScript Vite 配置](https://docs.nativescript.org/configuration/vite)、[NativeScript 9.1 Vite HMR](https://nstudio.io/blog/octane-vite-hmr-nativescript-9-1)。
+
+## common iOS AES 验证
+
+先构建 common：在插件目录执行 `npm pack`（需要设置本机 `ANDROID_HOME`），
+再在 demo 目录执行 `npm install ../nativescript-plugin/nativescipt-common/ajax-js-nativescript-common-0.1.0.tgz`。
+执行 `npx ns build ios --emulator`，再运行 `npx ns run ios --emulator`。
+在底部“测试”打开 AES 页面，运行本地验证。页面支持 iOS Keychain、直接导入及可选 HTTPS 领取密钥。
+
+自动验证可给模拟器应用 preferences 设置布尔值 `aesAutoCheck=true`。
+应用启动会在“测试”tab 内打开 AES 页面并自动验证，保留底部 tabs；关闭该值恢复正常首页。
+记录运行日志中的 `AES_INTEROP` 和 `AES_SELF_CHECK:PASS`，在仓库根目录执行：
+
+```sh
+ANDROID_HOME="$HOME/Library/Android/sdk" node ios/nativescipt-common/tests/interop.mjs /tmp/ajaxjs-demo.log
+```
+
+该脚本用现有 Android 生产 Cipher 解密 iOS 输出，验证 AES-128/192/256 双向兼容。
+重新生成 Android → iOS 测试向量：同一脚本传 `--generate`。
+公开测试密钥全零，仅用于互通验证。
+
+本机已验证（2026-10-10）：Xcode 27.0、NativeScript iOS 9.1.0、iPhone 17 Pro / iOS 26.5 模拟器。
+`vue-tsc --noEmit`、`ns build ios --emulator`、AES 页面本地检查和三种密钥长度的双向互通全部通过。
+真实设备、锁屏状态、真实 HTTPS 密钥服务尚未验证。
+
+模拟器自动验证示例（在 demo 目录执行，需已有启动的模拟器）：
+
+```sh
+xcrun simctl install booted platforms/ios/build/Debug-iphonesimulator/demoapp.app
+xcrun simctl launch booted org.nativescript.nsvuevitedemo -aesAutoCheck YES
+xcrun simctl spawn booted log show --last 3m --style compact \
+  --predicate 'process == "demoapp" AND (eventMessage CONTAINS "AES_INTEROP" OR eventMessage CONTAINS "AES_SELF_CHECK")' \
+  > /tmp/ajaxjs-demo.log
+```
+
+NativeScript 的 console 日志在当前运行时写入 iOS 日志系统，不能仅依赖 launch 的标准输出。
+`-aesAutoCheck YES` 是此次启动的临时开关；下次正常启动回到首页。
