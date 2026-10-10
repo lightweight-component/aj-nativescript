@@ -55,13 +55,12 @@ keyId 限定为 1–96 个字母、数字、点、下划线或连字符；密钥
 ## Keystore 与 JSON API
 
 ```ts
-import { importAesKey, hasAesKey, deleteAesKey, encryptJson, decryptJson }
-  from '@ajax-js/nativescript-common';
+import { importAesKey, hasAesKey, deleteAesKey, encryptJson, decryptJson } from '@ajax-js/nativescript-common';
 
 importAesKey(alias, keyBase64);
 const exists = hasAesKey(alias);
-const encrypted = encryptJson(alias, { message: '你好' });
-const value = decryptJson(alias, encrypted);
+const encrypted: EncryptedBody = encryptJson(alias, { message: '你好' });
+const value: = decryptJson(alias, encrypted);
 deleteAesKey(alias);
 ```
 
