@@ -29,3 +29,20 @@ test('iOS routes key lifecycle and dictionary result through Objective-C selecto
     api.deleteAesKey('test');
     assert.equal(api.hasAesKey('test'), false);
 });
+
+test('iOS AAD methods route selectors, preserve Unicode and propagate authentication errors', () => {
+    const calls = [];
+    globalThis.AjaxJSAes.encryptWithAssociatedDataPlaintextAssociatedData = (...args) => {
+        calls.push(args);
+        return { value: { objectForKey: key => ({ nonce: 'nonce', data: 'data' })[key] } };
+    };
+    globalThis.AjaxJSAes.decryptWithAssociatedDataNonceBase64DataBase64AssociatedData = (...args) => {
+        calls.push(args);
+        return args[3] === '设备 🔐' ? { value: '{"ok":true}' } : { error: 'authentication failed' };
+    };
+    const body = api.encryptJsonWithAssociatedData('test', { ok: true }, '设备 🔐');
+    assert.deepEqual(body, { nonce: 'nonce', data: 'data' });
+    assert.deepEqual(api.decryptJsonWithAssociatedData('test', body, '设备 🔐'), { ok: true });
+    assert.deepEqual(calls, [['test', '{"ok":true}', '设备 🔐'], ['test', 'nonce', 'data', '设备 🔐']]);
+    assert.throws(() => api.decryptJsonWithAssociatedData('test', body, 'changed'), /authentication failed/);
+});

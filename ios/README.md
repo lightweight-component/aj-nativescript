@@ -16,3 +16,9 @@ common 使用独立 Xcode Framework 工程 [nativescipt-common](nativescipt-comm
 
 `CryptoResult.error` 非空表示失败；成功 `value` 分别为布尔值、nonce/data 字典或 UTF-8 字符串。
 TS 包装层统一转为 Error。Swift 源码和随包声明描述每个方法的参数、返回值与失败条件。
+
+AAD 接口为 `encryptWithAssociatedData:plaintext:associatedData:` 与
+`decryptWithAssociatedData:nonceBase64:dataBase64:associatedData:`。
+字符串按 UTF-8 认证，不自动规范化，不加密、不包含在消息体中。
+空字符串兼容旧方法；非空 AAD 必须完全相同，否则认证失败不返回明文。
+源码更新后请重新执行 `npm run build:ios`；Windows 打包会检查框架是否包含新接口。

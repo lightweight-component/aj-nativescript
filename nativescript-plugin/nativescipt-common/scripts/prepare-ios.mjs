@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 if (process.platform === 'darwin') {
     const result = spawnSync(process.execPath, [fileURLToPath(new URL('./build-ios.mjs', import.meta.url))], { stdio: 'inherit' });
@@ -19,4 +19,10 @@ if (process.platform === 'darwin') {
         if (!existsSync(new URL(`../platforms/ios/AjaxJSCommon.xcframework/${file}`, import.meta.url)))
             throw new Error('Copy the complete macOS-built AjaxJSCommon.xcframework to platforms/ios before packing on Windows/Linux.');
     }
+    for (const file of files.filter(file => file.endsWith('-Swift.h'))) {
+        const header = readFileSync(new URL(`../platforms/ios/AjaxJSCommon.xcframework/${file}`, import.meta.url), 'utf8');
+        if (!header.includes('encryptWithAssociatedData:') || !header.includes('decryptWithAssociatedData:'))
+            throw new Error('The XCFramework does not support AAD. Rebuild it on macOS before packing.');
+    }
+
 }

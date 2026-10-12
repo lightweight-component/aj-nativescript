@@ -117,3 +117,19 @@ AES 实现使用 [Apple CryptoKit AES.GCM](https://developer.apple.com/documenta
 已验证（2026-10-10）：TS/桥接测试 6 项、Android JVM 测试 8 项、真机/模拟器 XCFramework 构建、
 完整 npm pack、demo Vue 类型检查、iOS 模拟器编译运行，以及生产 Android Cipher 与 CryptoKit 的 AES-128/192/256 双向互通。
 Windows 产物检查分支通过平台模拟验证；未在 Windows 实机执行构建。未在真实 iPhone 或真实密钥服务器测试。
+
+## 附加认证数据（AAD）
+
+原有 `encryptJson`、`decryptJson` 保持兼容。新增方法使用字符串形式的 AAD，Android/iOS 均按 UTF-8 编码，不自动规范化或序列化。
+
+```ts
+import { encryptJsonWithAssociatedData, decryptJsonWithAssociatedData } from '@ajax-js/nativescript-common';
+
+const aad = 'device-123/message/v1';
+const body = encryptJsonWithAssociatedData(alias, { message: '你好' }, aad);
+const value = decryptJsonWithAssociatedData<{ message: string }>(alias, body, aad);
+```
+
+AAD 只参与认证，不加密，也不会自动放入返回的 `{ nonce, data }`。调用方负责传输或重建相同 AAD。非空 AAD 消息用旧方法解密、或者使用不同 AAD 时均认证失败，不返回明文。空字符串等同无 AAD，可与旧方法双向兼容。不得将 null/undefined 当作空字符串传入。
+
+新增接口需要更新对应原生 JAR/XCFramework；仅更新 TS 无法调用旧原生组件中不存在的方法。

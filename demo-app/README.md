@@ -107,3 +107,11 @@ xcrun simctl spawn booted log show --last 3m --style compact \
 
 NativeScript 的 console 日志在当前运行时写入 iOS 日志系统，不能仅依赖 launch 的标准输出。
 `-aesAutoCheck YES` 是此次启动的临时开关；下次正常启动回到首页。
+
+### AES 附加认证数据（AAD）测试
+
+AES 页面提供“运行 AAD 与旧方式兼容测试”，自动导入临时公开测试密钥，逐项显示正确 Unicode AAD、错误 AAD、非空 AAD 使用旧方法解密、旧方法往返，以及空 AAD 与旧方法双向兼容的结果。结束后删除临时密钥。“运行本地加解密验证”也包含这些检查。
+
+也可以手动导入密钥、输入 JSON 和 AAD，点击“使用 AAD 加密 JSON”，再修改 AAD 点击“使用 AAD 解密 JSON”验证失败。认证失败会清除之前显示的明文。原有加解密按钮仍按无 AAD 方式工作。
+
+common 依赖使用本地插件目录，以使用最新 API 和原生产物。在插件目录先执行 `npm run build:native`（Android）或 `npm run build:ios`（macOS/iOS），再执行 `npm run build`；随后在 demo-app 执行 `npm install`。iOS 需要重新编译包含 AAD 接口的 XCFramework。

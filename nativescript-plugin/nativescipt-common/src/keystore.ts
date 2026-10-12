@@ -65,6 +65,13 @@ function nativeCrypto() {
                     
                     return { getNonce: () => value.objectForKey('nonce'), getData: () => value.objectForKey('data') };
                 },
+                encryptWithAssociatedData: (alias: string, text: string, aad: string) => {
+                    const value = iosValue(AjaxJSAes.encryptWithAssociatedDataPlaintextAssociatedData(alias, text, aad)) as NSDictionary<string, string>;
+
+                    return { getNonce: () => value.objectForKey('nonce'), getData: () => value.objectForKey('data') };
+                },
+                decryptWithAssociatedData: (alias: string, nonce: string, data: string, aad: string) =>
+                    iosValue(AjaxJSAes.decryptWithAssociatedDataNonceBase64DataBase64AssociatedData(alias, nonce, data, aad)) as string,
                 decrypt: (alias: string, nonce: string, data: string) =>
                     iosValue(AjaxJSAes.decryptNonceBase64DataBase64(alias, nonce, data)) as string
             }
@@ -151,6 +158,48 @@ export function decryptJson<T = unknown>(alias: string, body: EncryptedBody): T 
         throw new Error('Encrypted body must contain nonce and data strings.');
     
     return JSON.parse(nativeCrypto().JsonBodyCipher.decrypt(alias, body.nonce, body.data)) as T;
+}
+
+/**
+ * UTF-8 AAD 参与认证，不加密、不包含在消息体中；空字符串兼容无 AAD。
+ *
+ * @param alias 已导入的密钥别名，非空白且最多 128 个字符。
+ * @param value 可 JSON 序列化的值，遵循 JSON.stringify 规则。
+ * @param associatedData 附加认证字符串，不能为 null；解密时 UTF-8 字节必须与加密时完全一致。
+ * @returns Base64 nonce 和密文及 16 字节认证标签。
+ * @throws 参数无效、序列化失败、不支持的平台、密钥不存在或加密失败时抛出异常。
+ */
+export function encryptJsonWithAssociatedData(alias: string, value: unknown, associatedData: string): EncryptedBody {
+    if (typeof associatedData !== 'string')
+        throw new Error('Associated data must be a string.');
+
+    const plaintext = JSON.stringify(value);
+
+    if (plaintext === undefined)
+        throw new Error('Value must be JSON serializable.');
+
+    const result = nativeCrypto().JsonBodyCipher.encryptWithAssociatedData(alias, plaintext, associatedData);
+
+    return { nonce: result.getNonce(), data: result.getData() };
+}
+
+/**
+ * UTF-8 AAD 参与认证，不加密、不包含在消息体中；空字符串兼容无 AAD。
+ *
+ * @param alias 已导入的密钥别名，非空白且最多 128 个字符。
+ * @param body 包含标准 Base64 nonce 和密文及认证标签的消息体。
+ * @param associatedData 附加认证字符串，不能为 null；解密时 UTF-8 字节必须与加密时完全一致。
+ * @returns JSON 解析结果；泛型 T 默认 unknown，不进行运行时结构验证。
+ * @typeParam T 调用方预期的数据类型。
+ * @throws 参数无效、不支持的平台、密钥不存在、认证失败或 JSON 解析失败时抛出异常；认证失败不返回明文。
+ */
+export function decryptJsonWithAssociatedData<T = unknown>(alias: string, body: EncryptedBody, associatedData: string): T {
+    if (typeof associatedData !== 'string')
+        throw new Error('Associated data must be a string.');
+    if (!body || typeof body.nonce !== 'string' || typeof body.data !== 'string')
+        throw new Error('Encrypted body must contain nonce and data strings.');
+
+    return JSON.parse(nativeCrypto().JsonBodyCipher.decryptWithAssociatedData(alias, body.nonce, body.data, associatedData)) as T;
 }
 
 /**

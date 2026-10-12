@@ -56,3 +56,29 @@ test('rejects unsupported JSON values and malformed encrypted envelopes', () => 
     assert.throws(() => encryptJson('test', undefined), /JSON serializable/);
     assert.throws(() => decryptJson('test', { nonce: 1, data: 'x' }), /nonce and data/);
 });
+
+const aadApi = await import('../dist/keystore.js');
+test('Android AAD methods preserve UTF-8 strings and JSON envelopes', () => {
+    const calls = [];
+    globalThis.com.ajaxjs.nativescript.android.crypto.JsonBodyCipher = {
+        encryptWithAssociatedData(...args) {
+            calls.push(args);
+            return { getNonce: () => 'nonce', getData: () => 'data' };
+        },
+        decryptWithAssociatedData(...args) {
+            calls.push(args);
+            return '{"message":"中文"}';
+        }
+    };
+    const aad = '设备/类型 🔐';
+    const body = aadApi.encryptJsonWithAssociatedData('test', { message: '中文' }, aad);
+    assert.deepEqual(body, { nonce: 'nonce', data: 'data' });
+    assert.deepEqual(aadApi.decryptJsonWithAssociatedData('test', body, aad), { message: '中文' });
+    assert.deepEqual(calls, [['test', '{"message":"中文"}', aad], ['test', 'nonce', 'data', aad]]);
+    for (const invalid of [null, undefined, 1, {}]) {
+        assert.throws(() => aadApi.encryptJsonWithAssociatedData('test', {}, invalid), /Associated data/);
+        assert.throws(() => aadApi.decryptJsonWithAssociatedData('test', body, invalid), /Associated data/);
+    }
+    assert.throws(() => aadApi.encryptJsonWithAssociatedData('test', undefined, ''), /JSON serializable/);
+    assert.throws(() => aadApi.decryptJsonWithAssociatedData('test', {}, ''), /nonce and data/);
+});

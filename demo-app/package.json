@@ -9,7 +9,7 @@
     "postinstall": "patch-package"
   },
   "dependencies": {
-    "@ajax-js/nativescript-common": "file:../nativescript-plugin/nativescipt-common/ajax-js-nativescript-common-0.1.0.tgz",
+    "@ajax-js/nativescript-common": "file:../nativescript-plugin/nativescipt-common",
     "@ajax-js/nativescript-mqtt-v3": "file:../nativescript-plugin/nativescipt-mqtt-v3/ajax-js-nativescript-mqtt-v3-0.1.0.tgz",
     "@ajax-js/nativescript-mqtt-v5": "file:../nativescript-plugin/nativescipt-mqtt-v5/ajax-js-nativescript-mqtt-v5-0.1.0.tgz",
     "@nativescript/core": "~9.1.3",

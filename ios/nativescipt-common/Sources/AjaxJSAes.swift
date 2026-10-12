@@ -139,8 +139,20 @@ public final class AjaxJSAes: NSObject {
      */
     @objc(encrypt:plaintext:)
     public static func encrypt(_ alias: String, plaintext: String) -> CryptoResult {
+        encryptWithAssociatedData(alias, plaintext: plaintext, associatedData: "")
+    }
+
+    /**
+     * Encrypts with UTF-8 AAD; AAD is authenticated, not encrypted or returned.
+     * - Parameter alias: Existing nonblank AES key alias, <=128 UTF-16 units.
+     * - Parameter plaintext: UTF-8 text, including empty text.
+     * - Parameter associatedData: Exact authentication text; empty means no AAD.
+     * - Returns: Base64 nonce/data dictionary in value, or error on failure.
+     */
+    @objc(encryptWithAssociatedData:plaintext:associatedData:)
+    public static func encryptWithAssociatedData(_ alias: String, plaintext: String, associatedData: String) -> CryptoResult {
         perform {
-            let box = try AES.GCM.seal(Data(plaintext.utf8), using: load(alias))
+            let box = try AES.GCM.seal(Data(plaintext.utf8), using: load(alias), authenticating: Data(associatedData.utf8))
             return ["nonce": Data(box.nonce).base64EncodedString(),
                     "data": (box.ciphertext + box.tag).base64EncodedString()]
         }
@@ -153,6 +165,20 @@ public final class AjaxJSAes: NSObject {
      */
     @objc(decrypt:nonceBase64:dataBase64:)
     public static func decrypt(_ alias: String, nonceBase64: String, dataBase64: String) -> CryptoResult {
+        decryptWithAssociatedData(alias, nonceBase64: nonceBase64, dataBase64: dataBase64, associatedData: "")
+    }
+
+    /**
+     * Authenticates UTF-8 AAD and ciphertext before returning plaintext.
+     * - Parameter alias: Existing nonblank AES key alias, <=128 UTF-16 units.
+     * - Parameter nonceBase64: Standard Base64 encoding of a 12-byte nonce.
+     * - Parameter dataBase64: Standard Base64 ciphertext followed by a 16-byte tag.
+     * - Parameter associatedData: Must match encryption bytes exactly; empty means no AAD.
+     * - Returns: UTF-8 plaintext in value, or error without plaintext on malformed
+     *   input, missing key, invalid UTF-8 or authentication failure.
+     */
+    @objc(decryptWithAssociatedData:nonceBase64:dataBase64:associatedData:)
+    public static func decryptWithAssociatedData(_ alias: String, nonceBase64: String, dataBase64: String, associatedData: String) -> CryptoResult {
         perform {
             let nonce = try decode(nonceBase64)
             let data = try decode(dataBase64)
@@ -161,7 +187,7 @@ public final class AjaxJSAes: NSObject {
             }
             let box = try AES.GCM.SealedBox(nonce: AES.GCM.Nonce(data: nonce),
                 ciphertext: data.dropLast(16), tag: data.suffix(16))
-            let bytes = try AES.GCM.open(box, using: load(alias))
+            let bytes = try AES.GCM.open(box, using: load(alias), authenticating: Data(associatedData.utf8))
             guard let text = String(data: bytes, encoding: .utf8) else {
                 throw fail("Plaintext is not valid UTF-8.")
             }

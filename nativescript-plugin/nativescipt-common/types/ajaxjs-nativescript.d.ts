@@ -77,6 +77,16 @@ declare namespace com.ajaxjs.nativescript.android {
              */
             static encrypt(alias: string, plaintext: string): EncryptedBody;
             /**
+             * UTF-8 AAD 参与认证，不加密、不包含在消息体中；空字符串兼容无 AAD。
+             *
+             * @param alias 已导入的密钥别名，非空白且最多 128 个字符。
+             * @param plaintext UTF-8 正文，允许空字符串。
+             * @param associatedData 附加认证字符串，不能为 null；解密时 UTF-8 字节必须与加密时完全一致。
+             * @returns Base64 nonce 和密文及 16 字节认证标签。
+             * @throws 参数无效、密钥不存在或加密失败时抛出异常。
+             */
+            static encryptWithAssociatedData(alias: string, plaintext: string, associatedData: string): EncryptedBody;
+            /**
              * 验证 GCM 认证标签并解密 UTF-8 文本；认证失败不返回明文。
              *
              * @param alias 已导入的 AES 密钥别名，非空白且最多 128 个字符。
@@ -86,6 +96,17 @@ declare namespace com.ajaxjs.nativescript.android {
              * @throws 参数无效、密钥不存在、认证失败或解密失败时抛出异常。
              */
             static decrypt(alias: string, nonceBase64: string, dataBase64: string): string;
+            /**
+             * UTF-8 AAD 参与认证，不加密、不包含在消息体中；空字符串兼容无 AAD。
+             *
+             * @param alias 已导入的密钥别名，非空白且最多 128 个字符。
+             * @param nonceBase64 标准 Base64 编码的 12 字节 nonce。
+             * @param dataBase64 标准 Base64 密文及认证标签，至少 16 字节。
+             * @param associatedData 附加认证字符串，不能为 null；解密时 UTF-8 字节必须与加密时完全一致。
+             * @returns 认证成功后的 UTF-8 正文。
+             * @throws 参数无效、密钥不存在、AAD 不匹配或认证失败时抛出异常。
+             */
+            static decryptWithAssociatedData(alias: string, nonceBase64: string, dataBase64: string, associatedData: string): string;
         }
     }
     /**
@@ -295,10 +316,31 @@ declare class AjaxJSAes extends NSObject {
      * Invalid alias, missing key or encryption failure returns error.
      */
     static encryptPlaintext(alias: string, plaintext: string): AjaxJSCryptoResult;
+    /**
+     * UTF-8 AAD 参与认证，不加密、不包含在消息体中；空字符串兼容无 AAD。
+     *
+     * @param alias 已导入的密钥别名，非空白且最多 128 个字符。
+     * @param plaintext UTF-8 正文，允许空字符串。
+     * @param associatedData 附加认证字符串，不能为 null；解密时 UTF-8 字节必须与加密时完全一致。
+     * @returns 结果对象，value 为 Base64 nonce/data NSDictionary，error 非空表示失败。
+     * 异常通过结果的 error 字段返回，不返回密文。
+     */
+    static encryptWithAssociatedDataPlaintextAssociatedData(alias: string, plaintext: string, associatedData: string): AjaxJSCryptoResult;
 
     /**
      * Returns authenticated UTF-8 text; nonce must be 12 bytes, data >=16 bytes.
      * Invalid Base64, alias, length, missing key, invalid UTF-8 or tag returns error.
      */
     static decryptNonceBase64DataBase64(alias: string, nonceBase64: string, dataBase64: string): AjaxJSCryptoResult;
+    /**
+     * UTF-8 AAD 参与认证，不加密、不包含在消息体中；空字符串兼容无 AAD。
+     *
+     * @param alias 已导入的密钥别名，非空白且最多 128 个字符。
+     * @param nonceBase64 标准 Base64 编码的 12 字节 nonce。
+     * @param dataBase64 标准 Base64 密文及认证标签，至少 16 字节。
+     * @param associatedData 附加认证字符串，不能为 null；解密时 UTF-8 字节必须与加密时完全一致。
+     * @returns 结果对象，value 为 UTF-8 正文，error 非空表示失败。
+     * 异常通过结果的 error 字段返回；失败不返回明文。
+     */
+    static decryptWithAssociatedDataNonceBase64DataBase64AssociatedData(alias: string, nonceBase64: string, dataBase64: string, associatedData: string): AjaxJSCryptoResult;
 }

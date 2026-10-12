@@ -47,12 +47,53 @@ public final class JsonBodyCipher {
         return decryptWithKey(AesKeyStore.loadKey(alias), nonceBase64, dataBase64);
     }
 
+    /**
+     * UTF-8 AAD 参与认证，不加密、不包含在消息体中；空字符串兼容无 AAD。
+     *
+     * @param alias 已导入的密钥别名，非空白且最多 128 个字符。
+     * @param plaintext 待加密文本，不能为 null，允许空字符串。
+     * @param associatedData 附加认证字符串，不能为 null；解密时 UTF-8 字节必须与加密时完全一致。
+     * @return Base64 nonce 和密文及 16 字节认证标签。
+     * @throws GeneralSecurityException 密钥操作、认证或加解密失败。
+     * @throws IOException Keystore 加载失败。
+     * @throws IllegalArgumentException 参数无效。
+     * @throws IllegalStateException 密钥不存在。
+     */
+    public static EncryptedBody encryptWithAssociatedData(String alias, String plaintext, String associatedData) throws GeneralSecurityException, IOException {
+        return encryptWithKey(AesKeyStore.loadKey(alias), plaintext, associatedData);
+    }
+
+    /**
+     * UTF-8 AAD 参与认证，不加密、不包含在消息体中；空字符串兼容无 AAD。
+     *
+     * @param alias 已导入的密钥别名，非空白且最多 128 个字符。
+     * @param nonceBase64 标准 Base64 编码的 12 字节 nonce。
+     * @param dataBase64 标准 Base64 密文及认证标签，解码后至少 16 字节。
+     * @param associatedData 附加认证字符串，不能为 null；解密时 UTF-8 字节必须与加密时完全一致。
+     * @return 认证成功后的 UTF-8 文本，不进行 JSON 解析。
+     * @throws GeneralSecurityException 密钥操作、认证或加解密失败。
+     * @throws IOException Keystore 加载失败。
+     * @throws IllegalArgumentException 参数无效。
+     * @throws IllegalStateException 密钥不存在。
+     */
+    public static String decryptWithAssociatedData(String alias, String nonceBase64, String dataBase64, String associatedData) throws GeneralSecurityException, IOException {
+        return decryptWithKey(AesKeyStore.loadKey(alias), nonceBase64, dataBase64, associatedData);
+    }
+
     static EncryptedBody encryptWithKey(SecretKey key, String plaintext) throws GeneralSecurityException {
+        return encryptWithKey(key, plaintext, "");
+    }
+
+    static EncryptedBody encryptWithKey(SecretKey key, String plaintext, String associatedData) throws GeneralSecurityException {
+        if (associatedData == null)
+            throw new IllegalArgumentException("Associated data must be a string.");
+
         if (plaintext == null)
             throw new IllegalArgumentException("Plaintext is required.");
 
         Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
         cipher.init(Cipher.ENCRYPT_MODE, key);
+        cipher.updateAAD(associatedData.getBytes(StandardCharsets.UTF_8));
         byte[] ciphertext = cipher.doFinal(plaintext.getBytes(StandardCharsets.UTF_8));
 
         if (cipher.getIV().length != 12)
@@ -62,6 +103,13 @@ public final class JsonBodyCipher {
     }
 
     static String decryptWithKey(SecretKey key, String nonceBase64, String dataBase64) throws GeneralSecurityException {
+        return decryptWithKey(key, nonceBase64, dataBase64, "");
+    }
+
+    static String decryptWithKey(SecretKey key, String nonceBase64, String dataBase64, String associatedData) throws GeneralSecurityException {
+        if (associatedData == null)
+            throw new IllegalArgumentException("Associated data must be a string.");
+
         if (nonceBase64 == null || dataBase64 == null)
             throw new IllegalArgumentException("Nonce and ciphertext are required.");
 
@@ -74,6 +122,7 @@ public final class JsonBodyCipher {
         Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
         cipher.init(Cipher.DECRYPT_MODE, key, new GCMParameterSpec(128, nonce));
 
+        cipher.updateAAD(associatedData.getBytes(StandardCharsets.UTF_8));
         return new String(cipher.doFinal(ciphertext), StandardCharsets.UTF_8);
     }
 }
