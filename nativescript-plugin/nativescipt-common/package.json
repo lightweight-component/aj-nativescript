@@ -1,6 +1,6 @@
 {
   "name": "@ajax-js/nativescript-common",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Shared TypeScript utilities and AES-GCM helpers for NativeScript 9",
   "type": "module",
   "main": "./dist/index.js",
@@ -27,7 +27,7 @@
   "scripts": {
     "build": "npm run clean && tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "npm run build && node --test scripts/keystore.test.mjs scripts/ios-bridge.test.mjs",
+    "test": "npm run build && node --test scripts/keystore.test.mjs scripts/ios-bridge.test.mjs scripts/toast.test.mjs",
     "dev": "tsc -p tsconfig.json --watch",
     "build:native": "node scripts/build-native.mjs",
     "prepack": "npm run build:native && node scripts/prepare-ios.mjs && npm run build",

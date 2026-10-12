@@ -18,6 +18,7 @@
           <StackLayout padding="24" spacing="16">
             <Label :text="text.testTitle" fontSize="24" fontWeight="bold" />
             <Label :text="text.testHint" class="muted" textWrap="true" />
+            <Button text="Toast 测试" @tap="showToastDemo" />
             <Button :text="text.aes" @tap="openAes" />
             <Button :text="text.mqtt3" @tap="openMqtt" />
             <Button :text="text.mqtt5" @tap="openMqttV5" />
@@ -59,8 +60,9 @@
 
 <script setup lang="ts">
 import { $navigateTo } from 'nativescript-vue';
-import { ApplicationSettings, Dialogs, type EventData, TabView } from '@nativescript/core';
+import { isIOS, ApplicationSettings, Dialogs, type EventData, TabView } from '@nativescript/core';
 import { text, pageClass, isDark, refreshSystemAppearance } from '../common/preferences';
+import { toast, com as commonNative } from '@ajax-js/nativescript-common';
 import Settings from './Settings.vue';
 import About from './About.vue';
 import AesDemo from './AesDemo.vue';
@@ -82,7 +84,22 @@ function initializeTabs(args: EventData) {
     (args.object as TabView).selectedIndex = autoCheck ? 1 : 0;
     if (autoCheck)
       openAes();
+    if (ApplicationSettings.getBoolean('toastAutoCheck', false)) {
+      (args.object as TabView).selectedIndex = 1;
+      setTimeout(showToastDemo, 500);
+    }
   }, 0);
+}
+
+/**
+ * 在原有测试 tab 演示统一 toast，保留底部切换；版本信息只用于组件验证。
+ */
+function showToastDemo() {
+  toast('NativeScript Toast 测试 🔔');
+  if (isIOS) {
+    const helper = commonNative.ajaxjs.nativescript.ios.Helper;
+    console.log(`IOS_HELPER_CHECK:${helper.getAppVersionName()}/${helper.getAppBuildNumber()}`);
+  }
 }
 
 /**

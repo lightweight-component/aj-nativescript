@@ -344,3 +344,46 @@ declare class AjaxJSAes extends NSObject {
      */
     static decryptWithAssociatedDataNonceBase64DataBase64AssociatedData(alias: string, nonceBase64: string, dataBase64: string, associatedData: string): AjaxJSCryptoResult;
 }
+
+/**
+ * iOS 15+ 原生 Helper，Objective-C 名称避免与宿主 Helper 冲突。
+ * UI 方法异步切换到主线程；无返回值，失败通过日志报告。
+ */
+declare class AjaxJSIOSHelper extends NSObject {
+    /**
+     * message 为提示文本；空白忽略，在活动窗口显示两秒，不阻挡触摸。
+     */
+    static showToast(message: string): void;
+    /**
+     * 返回宿主应用版本字符串，缺失返回 Unknown 并记录日志。
+     */
+    static getAppVersionName(): string;
+    /**
+     * 返回宿主构建版本字符串，缺失返回 Unknown 并记录日志。
+     */
+    static getAppBuildNumber(): string;
+    /**
+     * appleID 为 ASCII 数字，无 id 前缀；默认中国区，打开失败尝试 HTTPS。
+     */
+    static openAppInAppStore(appleID: string): void;
+    /**
+     * isInternational=true 不限定地区；无效 ID 或最终打开失败记录日志。
+     */
+    static openAppInAppStoreIsInternational(appleID: string, isInternational: boolean): void;
+    /**
+     * 设置设备横屏向左，受系统和宿主方向配置限制。
+     */
+    static setLandscapeOrientation(): void;
+    /**
+     * 设置设备竖屏，受系统和宿主方向配置限制。
+     */
+    static setPortraitOrientation(): void;
+    /**
+     * 仅 iOS 16+，请求场景横屏向右；失败记录日志，无场景不执行。
+     */
+    static requestOrientationChange(): void;
+    /**
+     * 仅 iOS 16+，请求场景竖屏；失败记录日志，无场景不执行。
+     */
+    static forcePortrait(): void;
+}

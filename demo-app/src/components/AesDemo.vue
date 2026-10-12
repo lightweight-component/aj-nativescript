@@ -116,11 +116,22 @@ function verifyAssociatedData(testAlias: string): void {
     try {
       check();
       aadResults.value.push({ name, passed: true });
+      console.log(`AES_AAD_CHECK:PASS:${name}`);
     } catch (cause) {
       aadResults.value.push({ name, passed: false });
       throw cause;
     }
   }
+}
+
+/**
+ * 删除并重新查询临时密钥，确认清理完成；日志只含非秘密的测试别名。
+ */
+function cleanupTestKey(testAlias: string): void {
+  deleteAesKey(testAlias);
+  if (hasAesKey(testAlias))
+    throw new Error('临时测试密钥清理失败');
+  console.log(`AES_TEST_KEY_CLEANUP:PASS:${testAlias}`);
 }
 
 /**
@@ -136,7 +147,7 @@ function checkAssociatedData(): void {
       verifyAssociatedData(testAlias);
       status.value = 'AAD 与旧方式兼容测试全部通过';
     } finally {
-      deleteAesKey(testAlias);
+      cleanupTestKey(testAlias);
     }
   });
 }
@@ -189,7 +200,7 @@ function selfCheck() {
            */
           console.log(`AES_INTEROP:${JSON.stringify({ size: vector.size, ...result })}`);
         } finally {
-          deleteAesKey(vectorAlias);
+          cleanupTestKey(vectorAlias);
         }
       }
 
@@ -243,11 +254,11 @@ function selfCheck() {
 
       if (!rejected)
         throw new Error('删除后仍可解密');
-      console.log('AES_SELF_CHECK:PASS');
-      status.value = '本地验证通过：AAD 认证、旧方式兼容、Android 互通、导入、重复拒绝、中文往返、新 nonce、篡改拒绝及删除';
     } finally {
-      deleteAesKey(testAlias);
+      cleanupTestKey(testAlias);
     }
+    console.log('AES_SELF_CHECK:PASS');
+    status.value = '本地验证通过：AAD 认证、旧方式兼容、Android 互通、导入、重复拒绝、中文往返、新 nonce、篡改拒绝及删除';
   });
 }
 
@@ -268,7 +279,7 @@ async function run(action: () => void | Promise<void>) {
   try {
     await action();
   } catch (cause) {
-    console.log('AES_SELF_CHECK:FAIL');
+    console.log('AES_OPERATION:FAIL');
     status.value = '操作失败，请查看错误信息';
     error.value = cause instanceof Error ? cause.message : '操作失败，请检查输入和密钥状态。';
   } finally {

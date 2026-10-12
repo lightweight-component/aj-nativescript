@@ -115,3 +115,29 @@ AES 页面提供“运行 AAD 与旧方式兼容测试”，自动导入临时�
 也可以手动导入密钥、输入 JSON 和 AAD，点击“使用 AAD 加密 JSON”，再修改 AAD 点击“使用 AAD 解密 JSON”验证失败。认证失败会清除之前显示的明文。原有加解密按钮仍按无 AAD 方式工作。
 
 common 依赖使用本地插件目录，以使用最新 API 和原生产物。在插件目录先执行 `npm run build:native`（Android）或 `npm run build:ios`（macOS/iOS），再执行 `npm run build`；随后在 demo-app 执行 `npm install`。iOS 需要重新编译包含 AAD 接口的 XCFramework。
+
+## Toast 验证
+
+在“测试”tab 点击“Toast 测试”调用 common 的统一 `toast(message)`。
+iOS 显示两秒非模态提示，期间页面和底部 tabs 仍可操作；Android 沿用原生短 Toast。
+模拟器自动调用可使用临时启动参数 `-toastAutoCheck YES`，保留 tabs，并在日志输出 `IOS_HELPER_CHECK:版本/构建版本`。
+
+## iOS AAD 验证记录（2026-10-12）
+
+环境：Xcode 27.0、iPhone 17 Pro 模拟器、iOS 26.5。
+重新构建 AAD XCFramework 和 TS 插件后，demo 的 common 依赖已链接到本地插件目录。
+旧生成工程因包路径变更产生重复 Framework 引用，通过重新生成 iOS 平台目录解决。
+
+使用 XCTest 对现有 NativeScript App 实际点击“测试”tab 和 AES 页面：
+
+- “运行 AAD 与旧方式兼容测试”的六项全部通过。
+- “运行本地加解密验证（含 AAD）”通过，日志出现 `AES_SELF_CHECK:PASS`。
+- 临时密钥删除后逐个查询 Keychain，均确认不存在，日志为 `AES_TEST_KEY_CLEANUP:PASS:<测试别名>`。
+- 输入框使用两个前导空格和两个尾随空格的 AAD（字符串 `"  AAD-space/v1  "`），相同 AAD 解密成功。
+- 改为 `"AAD-space/v1"` 后认证失败，明文显示变为“尚未解密”；恢复原始空格后再次解密成功。
+- 界面测试导入的手动测试密钥也通过删除按钮清理，并由检查按钮确认不存在。
+
+10 项 TS/桥接测试和 3 项 XCTest UI 测试通过。XCTest 运行器需为模拟器 App 签名；
+未签名测试构建会导致 Keychain 返回 -34018。本次使用模拟器开发签名后全部通过。
+系统界面操作工具未获授权，因此输入流程采用 XCTest 自动界面操作，未由该工具手工点击。
+本次未进行真实 iPhone 测试，未提交、推送或发布。

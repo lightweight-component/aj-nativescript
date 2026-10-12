@@ -32,3 +32,6 @@ common AES 原生功能支持 Android 8.0（API 26）及以上和 iOS 15 及以�
 - [GitHub](https://github.com/lightweight-component/aj-nativescript)
 
 本项目采用 [Apache License 2.0](LICENSE)。
+
+common 另提供统一 `toast(message)` 提示接口；iOS 的版本、App Store 和方向工具通过
+`com.ajaxjs.nativescript.ios.Helper` TS 命名空间调用，详见 common 组件说明。

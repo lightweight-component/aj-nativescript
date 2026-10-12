@@ -22,3 +22,10 @@ AAD 接口为 `encryptWithAssociatedData:plaintext:associatedData:` 与
 字符串按 UTF-8 认证，不自动规范化，不加密、不包含在消息体中。
 空字符串兼容旧方法；非空 AAD 必须完全相同，否则认证失败不返回明文。
 源码更新后请重新执行 `npm run build:ios`；Windows 打包会检查框架是否包含新接口。
+
+## iOS 工具函数
+
+`Sources/com/ajaxjs/nativescript/ios/Helper.swift` 及内部 `AppToast.swift` 随 AjaxJSCommon Framework 编译。
+Helper 通过 Objective-C 名称 `AjaxJSIOSHelper` 暴露，TS 命名空间为 `com.ajaxjs.nativescript.ios.Helper`。
+包含 Toast、应用版本、构建版本、App Store 跳转、设备方向设置和 iOS 16+ 场景方向请求。
+Logger subsystem 已替换为组件的 `com.ajaxjs.nativescript.ios`，不依赖原应用工程。

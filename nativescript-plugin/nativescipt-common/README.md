@@ -91,13 +91,31 @@ Android 正常清缓存保留密钥，清除应用数据或卸载后需重新配
 
 ## 发布
 
-完成验证、更新版本号并确认具有 @ajax-js 发布权限后，在本目录执行：
+在本目录执行，发布账号需有 `@ajax-js` 权限：
 
-```powershell
+```sh
+npm version patch --no-git-tag-version
+npm test
+npm pack
+```
+
+`patch` 升级补丁版本，例如 `0.1.0 → 0.1.1`；`--no-git-tag-version` 不创建 Git 提交或标签。
+`npm pack` 自动构建并打包 Android JAR、iOS XCFramework、TS 产物和声明文件，生成对应版本的 `.tgz`。
+
+检查安装包后，发布该文件（文件名以实际生成的版本为准）：
+
+```sh
+npm publish ./ajax-js-nativescript-common-0.1.1.tgz
+```
+
+也可以直接发布当前目录：
+
+```sh
 npm publish
 ```
 
-npm pack 和 npm publish 都触发 prepack，自动构建并携带 JAR、XCFramework、TypeScript 产物及声明文件。npm publish 无需指定安装包文件名。
+不指定文件名时，npm 根据当前 `package.json` 的版本重新构建、打包并发布，不会选择目录中的 `.tgz`；旧版本安装包不会影响发布。
+指定 `.tgz` 时发布该文件的内容，不重新构建。包已配置公开发布；未登录时先执行 `npm login`。
 
 单独构建 Java JAR 及运行 Java 测试，见 [公共 Java 工程](../../android/nativescipt-common/README.md)。
 
@@ -133,3 +151,42 @@ const value = decryptJsonWithAssociatedData<{ message: string }>(alias, body, aa
 AAD 只参与认证，不加密，也不会自动放入返回的 `{ nonce, data }`。调用方负责传输或重建相同 AAD。非空 AAD 消息用旧方法解密、或者使用不同 AAD 时均认证失败，不返回明文。空字符串等同无 AAD，可与旧方法双向兼容。不得将 null/undefined 当作空字符串传入。
 
 新增接口需要更新对应原生 JAR/XCFramework；仅更新 TS 无法调用旧原生组件中不存在的方法。
+
+## Toast 和 iOS Helper
+
+```ts
+import { toast, com as commonNative } from '@ajax-js/nativescript-common';
+
+toast('操作成功');
+
+const iosHelper = commonNative.ajaxjs.nativescript.ios.Helper;
+const version = iosHelper.getAppVersionName();
+const build = iosHelper.getAppBuildNumber();
+iosHelper.openAppInAppStore('123456789', true);
+```
+
+`toast(message): void` 在 Android 使用原有 `Helper.toast` 和应用 Context，在 iOS 使用活动窗口中的轻量 Toast。
+空白字符串忽略；非字符串或不支持的平台抛出异常。iOS 提示两秒后消失、不阻挡触摸，连续调用替换旧提示；无活动窗口时记录日志。
+调用不等待 UI 显示完成，原生端切回主线程。demo 的“测试”tab 提供 Toast 测试按钮，保留底部 tabs。
+
+iOS 工具源码位于 `ios/nativescipt-common/Sources/com/ajaxjs/nativescript/ios`，从原工程 Helper.swift 及其 AppToast.swift 复制。
+Swift 采用 Framework 模块而非 Java 包机制，原生 Objective-C 类名为 `AjaxJSIOSHelper`，避免宿主的同名 Helper 冲突；
+TS 提供上述 `com.ajaxjs.nativescript.ios.Helper` 命名空间，所有方法在非 iOS 平台调用均抛出 Error。
+
+| 方法 | 参数与行为 |
+| --- | --- |
+| showToast(message) | 提示文本，行为同 iOS toast |
+| getAppVersionName() | 返回宿主 CFBundleShortVersionString，缺失返回 Unknown |
+| getAppBuildNumber() | 返回宿主 CFBundleVersion 字符串，缺失返回 Unknown |
+| openAppInAppStore(appleID, isInternational?) | ID 为纯 ASCII 数字，无 id 前缀；默认中国区，true 不限定地区；打开失败尝试 HTTPS，无效 ID 或最终失败记录日志 |
+| setLandscapeOrientation() | 沿用原工程的设备方向设置，横屏向左 |
+| setPortraitOrientation() | 沿用原工程的设备方向设置，竖屏 |
+| requestOrientationChange() | iOS 16+ 请求场景横屏向右 |
+| forcePortrait() | iOS 16+ 请求场景竖屏 |
+
+方向方法无返回值，受宿主支持方向、视图控制器和系统限制；iOS 16+ 建议使用场景请求方法。
+两个场景方法在低版本 TS 调用会抛出 Error，在无场景时不执行操作，系统拒绝时记录日志。
+原生直接调用这两个方法须由调用方检查 iOS 16 可用性。App Store 和方向功能保留原工程行为，不在自动测试中实际跳转或改变方向。
+
+2026-10-12 Helper 验证：10 项 TS/桥接测试通过，真机和模拟器 XCFramework 构建、完整 npm pack、demo 类型检查及 iOS 编译通过。
+iPhone 17 Pro / iOS 26.5 模拟器实际显示 Toast、约两秒后自动消失，底部 tabs 保留；版本/构建读取返回 1.0/1.0。
