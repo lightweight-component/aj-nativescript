@@ -41,6 +41,24 @@ public class Helper {
         clipboard.setPrimaryClip(clip);
     }
 
+    /**
+     * 同步读取系统剪贴板第一个项目的文本，不去除空白。
+     *
+     * @param context 非空的应用或页面上下文
+     * @return 文本；服务不可用、无剪贴内容或无法转换为文本时返回空字符串
+     * @throws SecurityException 系统拒绝访问时传播；应在前台响应用户操作调用
+     */
+    public static String getFromClipboard(Context context) {
+        ClipboardManager clipboard = (ClipboardManager) context.getSystemService(Context.CLIPBOARD_SERVICE);
+        if (clipboard == null || !clipboard.hasPrimaryClip())
+            return "";
+        ClipData clip = clipboard.getPrimaryClip();
+        if (clip == null || clip.getItemCount() == 0)
+            return "";
+        CharSequence text = clip.getItemAt(0).coerceToText(context);
+        return text == null ? "" : text.toString();
+    }
+
     private static final Handler MAIN_HANDLER = new Handler(Looper.getMainLooper());
 
     /**

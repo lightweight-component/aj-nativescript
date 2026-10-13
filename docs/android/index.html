@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="utf-8"/>
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
+        <title>AJ NativeScript-安卓工具类</title>
+        <meta name="description" content="面向 NativeScript TypeScript 调用的 Android Helper 和应用市场跳转工具"/>
+        <meta name="keywords" content="NativeScript, Android,Toast"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1"/>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@200..900&family=Noto+Serif:ital,wght@0,100..900;1,100..900&display=swap&family=Noto+Sans+SC:wght@100..900&display=swap" />
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@100..900&family=Noto+Serif:ital,wght@0,100..900;1,100..900&display=swap" />
+        <link rel="stylesheet" href="https://framework.ajaxjs.com/static/new-ui/css/common.css" />
+        <script defer src="https://cdn.jsdelivr.net/npm/@highlightjs/cdn-assets@11.12.0/highlight.min.js"></script>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@highlightjs/cdn-assets@11.12.0/styles/github.min.css" />
+        <link rel="stylesheet" href="https://aj-util.ajaxjs.com/asset/main.css" />
+        <script src="https://aj-util.ajaxjs.com/asset/js/common.js"></script>
+        <script>
+            AJUtils.initTheme();
+            AJUtils.onReady(function () {
+                var button = document.querySelector('[data-document-language-toggle]');
+                var path = window.location.pathname;
+                AJUtils.bindThemeToggle();
+            });
+        </script>
+        <link rel="icon" type="image/png" href="https://nativescript.org/favicon-32x32.png" />
+
+        <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?734ea877e4a740968e40994221d9c877";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+        </script>
+    </head>
+    <body>
+        <nav>
+            <div>
+                <div class="links">
+                    <a href="/">🏠 首页</a>
+                    | ⚙️ 源码:
+                    <a target="_blank" href="https://github.com/lightweight-component/aj-nativescript">Github</a>/<a target="_blank" href="https://gitcode.com/lightweight-component/aj-nativescript">Gitcode</a>
+                    |
+                    <button class="theme-toggle" type="button" data-theme-toggle aria-label="切换主题" title="切换主题">☾</button>
+                </div>
+                <h1>AJ NativeScript</h1>
+                <h3>跨平台 App 开发</h3>
+            </div>
+        </nav>
+        <div class="docs-layout">
+            <menu class="docs-navigation" aria-label="文档导航">
+                <ul>
+                    <li class="selected">
+                        <a href="/docs">简介</a>
+                    </li>
+                </ul>
+
+                <h3>封装的功能</h3>
+                <ul>
+                 <li>
+                      <a href="/keystore-aes">KeyStore 与 AES</a>
+                  </li>
+                  <li>
+                      <a href="/ios">iOS 工具类</a>
+                  </li>
+                  <li>
+                      <a href="/common-helper">通用工具</a>
+                  </li>
+                  <li>
+                      <a href="/android">安卓工具类</a>
+                  </li>
+                 <li>
+                      <a href="/android-native">安卓原生工具</a>
+                  </li>
+                </ul>
+                <h3>MQTT 封装</h3>
+                <ul>
+                    <li><a href="/mqttv3">MQTTv3</a></li>
+                    <li><a href="/mqttv5">MQTTv5</a></li>
+                </ul>
+                <h3>其他</h3>
+                <ul>
+                    <li><a href="/contact">联系</a></li>
+                </ul>
+
+            </menu>
+            <article class="aj-text chinese">
+                <h1>安卓工具类</h1>
+<p>本文面向 NativeScript 业务 TypeScript 调用，介绍 Java 实现的 <code>com.ajaxjs.nativescript.android.utils.Helper</code> 和 <code>MarketRedirect</code>。当前 demo-app 最低支持 Android 8.0（API 26）。</p>
+<p>Toast 和剪贴板的跨平台签名集中在 <a href="../common-helper/">通用工具</a>；HttpRequest 和 Utils 的 Java 内部用法见 <a href="../android-native/">安卓原生工具</a>；密钥管理与加解密见 <a href="../keystore-aes/">KeyStore 与 AES</a>。</p>
+<h2>安装与调用入口</h2>
+<pre><code class="language-sh">npm install @ajax-js/nativescript-common
+</code></pre>
+<p>npm 包中的 <code>platforms/android/aj-nativescript.jar</code> 由 NativeScript 在 Android 构建时集成，无需在宿主重复复制 Java 源码。更新原生组件后必须重新构建 App，仅刷新 JS 不能更新 JAR。</p>
+<p>Toast、密钥管理、JSON 加解密和设备密钥派生提供统一 TS 方法。本文 Android 工具通过 NativeScript 的全局 Java 命名空间调用，方法均为静态方法，不需要创建工具类实例。</p>
+<pre><code class="language-ts">import { Application, isAndroid } from '@nativescript/core';
+import { toast } from '@ajax-js/nativescript-common';
+
+toast('保存成功');
+
+if (isAndroid) {
+    const context = Application.android.context;
+    const helper = com.ajaxjs.nativescript.android.utils.Helper;
+    const version = helper.getVersionName(context);
+    console.log(`应用版本：${version}`);
+}
+</code></pre>
+<p>Android 的 <code>com</code> 是原生全局命名空间，不需要从插件导入；插件导出的 <code>com.ajaxjs.nativescript.ios</code> 是 iOS TS 包装层，不要导入它来访问 Android Java 类。Android 工具必须在 <code>isAndroid</code> 分支内访问，需要 Context 的方法在应用初始化后调用。</p>
+<p>原生声明位于插件 <code>types/ajaxjs-nativescript.d.ts</code>。若宿主 TypeScript 没有自动加载该文件，可在宿主声明文件中加入：</p>
+<pre><code class="language-ts">/// &lt;reference path=&quot;../node_modules/@ajax-js/nativescript-common/types/ajaxjs-nativescript.d.ts&quot; /&gt;
+</code></pre>
+<p>上述路径按宿主声明文件的位置调整。三斜线引用是 TypeScript 指令，不是普通注释。</p>
+<h2>Helper：提示、剪贴板和应用状态</h2>
+<p>原生类：<code>com.ajaxjs.nativescript.android.utils.Helper</code>。日志标签为 <code>AJ_HELPER</code>。</p>
+<table>
+<thead>
+<tr>
+<th>方法</th>
+<th>参数</th>
+<th>返回值 / 失败行为</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>copyToClipboard(context, text)</code></td>
+<td>非空 Context、文本</td>
+<td><code>void</code>；不返回复制成功标志</td>
+</tr>
+<tr>
+<td><code>getFromClipboard(context)</code></td>
+<td>非空 Context</td>
+<td>首个项目的转换文本；服务不可用、无项目或转换结果为空时为空字符串</td>
+</tr>
+<tr>
+<td><code>toast(context, message)</code></td>
+<td>Context、提示文本</td>
+<td><code>void</code>；Context 为空时不显示</td>
+</tr>
+<tr>
+<td><code>isInternetAvailable(context)</code></td>
+<td>Context，可为空</td>
+<td>默认网络具有 INTERNET 和 VALIDATED 能力时为 <code>true</code>；无网络、服务或 Context 为空、缺少权限时为 <code>false</code></td>
+</tr>
+<tr>
+<td><code>isNetworkAvailable()</code></td>
+<td>无</td>
+<td>同步 DNS 解析 <code>www.baidu.com</code> 成功为 <code>true</code>；UnknownHostException 时为 <code>false</code></td>
+</tr>
+<tr>
+<td><code>getSystemLanguageByCxt(context)</code></td>
+<td>Context，可为空</td>
+<td>Context 资源配置的首选语言代码，例如 <code>zh</code>；Context 为空或首选 Locale 为空时为 <code>null</code></td>
+</tr>
+<tr>
+<td><code>getSystemLanguage()</code></td>
+<td>无</td>
+<td>系统资源配置的首选语言代码；语言列表为空时为 <code>null</code></td>
+</tr>
+<tr>
+<td><code>isDarkMode(context)</code></td>
+<td>Context，可为空</td>
+<td>Context 配置为夜间模式时为 <code>true</code>；Context 为空时为 <code>false</code></td>
+</tr>
+<tr>
+<td><code>getVersionName(context)</code></td>
+<td>非空 Context</td>
+<td>宿主版本名称；找不到包信息时记录日志并返回 <code>null</code></td>
+</tr>
+<tr>
+<td><code>getVersionCode(context)</code></td>
+<td>非空 Context</td>
+<td>宿主版本代码；找不到包信息时记录日志并返回 <code>-1</code></td>
+</tr>
+</tbody>
+</table>
+<p>没有明确接受空 Context 的方法应传入有效 Context；例如版本读取方法不会捕获空 Context 导致的异常。原生异常可由 TS 调用方捕获。</p>
+<h3>提示与剪贴板的调用选择</h3>
+<p>业务代码优先使用 <a href="../common-helper/">通用工具</a> 中的 <code>toast(message)</code>、<code>copyToClipboard(str)</code> 和 <code>getFromClipboard()</code>，无需处理 Context。</p>
+<p>需要直接调用 Android Helper 时，方法签名带有 Context：</p>
+<pre><code class="language-ts">if (isAndroid) {
+    const helper = com.ajaxjs.nativescript.android.utils.Helper;
+    const context = Application.android.context;
+    helper.copyToClipboard(context, '需要复制的文本');
+    const text: string = helper.getFromClipboard(context);
+    helper.toast(context, '操作成功');
+}
+</code></pre>
+<p>原生 <code>toast</code> 接受空 Context，此时不显示；它不执行统一 TS 方法的参数检查。原生复制、读取需要有效 Context。跨平台文本行为、系统访问限制及模拟器验证结果统一见通用工具页。</p>
+<h3>网络状态与权限</h3>
+<p>宿主在 <code>App_Resources/Android/src/main/AndroidManifest.xml</code> 的 <code>&lt;manifest&gt;</code> 节点下声明需要的权限：</p>
+<pre><code class="language-xml">&lt;uses-permission android:name=&quot;android.permission.ACCESS_NETWORK_STATE&quot; /&gt;
+&lt;uses-permission android:name=&quot;android.permission.INTERNET&quot; /&gt;
+</code></pre>
+<p>两者无需运行时权限弹窗。<code>ACCESS_NETWORK_STATE</code> 用于查询系统网络；<code>INTERNET</code> 用于 HTTP 和 DNS 等联网操作。</p>
+<pre><code class="language-ts">if (isAndroid) {
+    const online = com.ajaxjs.nativescript.android.utils.Helper
+        .isInternetAvailable(Application.android.context);
+    console.log(`系统已验证联网：${online}`);
+}
+</code></pre>
+<p><code>isInternetAvailable</code> 不发送请求，可在主线程查询；它判断当前默认网络是否通过 Android 系统的互联网验证，不保证 MQTT Broker 或业务服务器可达。</p>
+<p><code>isNetworkAvailable</code> 保留旧的 DNS 探测实现，必须在后台线程调用。DNS 缓存可能影响结果，解析成功也不等于服务器可达；它只捕获 UnknownHostException，主线程网络限制等其他异常可能传播。业务页面优先使用系统网络状态，再通过实际业务请求判断服务可用性。</p>
+<h3>语言、主题与版本</h3>
+<pre><code class="language-ts">if (isAndroid) {
+    const context = Application.android.context;
+    const helper = com.ajaxjs.nativescript.android.utils.Helper;
+    console.log(helper.getSystemLanguage());
+    console.log(helper.getSystemLanguageByCxt(context));
+    console.log(helper.isDarkMode(context));
+    console.log(helper.getVersionName(context));
+    console.log(helper.getVersionCode(context));
+}
+</code></pre>
+<p><code>getSystemLanguage()</code> 读取系统资源配置；<code>getSystemLanguageByCxt()</code> 读取传入 Context 的资源配置，可能受到应用独立语言或自定义配置影响。两者只返回首选语言的代码，不包含地区和文字体系，<code>zh</code> 不能用来区分简体和繁体。Context 版本直接读取列表第一个元素，没有单独检查空列表。</p>
+<p><code>isDarkMode()</code> 读取 Context 的 <code>uiMode</code>，不提供主题切换或变化监听，应用资源配置可能影响结果。</p>
+<p>版本信息来自宿主 App，不是 npm 插件版本。Android 9 及以上的版本代码使用 <code>longVersionCode</code>，较旧系统使用 <code>versionCode</code>；Java long 映射为 JS number，超过 <code>Number.MAX_SAFE_INTEGER</code> 时可能丢失精度。</p>
+<h2>MarketRedirect：应用市场跳转</h2>
+<p>原生类：<code>com.ajaxjs.nativescript.android.utils.MarketRedirect</code>。</p>
+<table>
+<thead>
+<tr>
+<th>方法</th>
+<th>参数</th>
+<th>返回值</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>getPhoneBrand()</code></td>
+<td>无</td>
+<td>以 Locale.ROOT 转为小写的设备品牌；缺失时为空字符串</td>
+</tr>
+<tr>
+<td><code>getManufacturer()</code></td>
+<td>无</td>
+<td>以 Locale.ROOT 转为小写的制造商；缺失时为空字符串</td>
+</tr>
+<tr>
+<td><code>getMarketPackageName()</code></td>
+<td>无</td>
+<td>按品牌和制造商推荐的市场包名</td>
+</tr>
+<tr>
+<td><code>redirect(context)</code></td>
+<td>非空 Context</td>
+<td><code>void</code>；打开当前宿主应用的市场详情</td>
+</tr>
+<tr>
+<td><code>redirect(context, appPackage)</code></td>
+<td>Context、目标应用包名</td>
+<td><code>void</code>；使用推荐市场</td>
+</tr>
+<tr>
+<td><code>redirect(context, appMarketPackage, appPackage)</code></td>
+<td>Context、市场包名、目标应用包名</td>
+<td><code>void</code>；使用指定市场</td>
+</tr>
+<tr>
+<td><code>isPackageInstalled(context, packageName)</code></td>
+<td>Context、包名</td>
+<td>已安装且对宿主可见时为 <code>true</code>；找不到包信息时为 <code>false</code></td>
+</tr>
+</tbody>
+</table>
+<p>当前厂商映射如下，其他厂商默认 Google Play。这是源码内固定规则，不会检测哪一个市场实际已安装。</p>
+<table>
+<thead>
+<tr>
+<th>品牌 / 制造商</th>
+<th>市场包名</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Xiaomi / Redmi / POCO</td>
+<td><code>com.xiaomi.market</code></td>
+</tr>
+<tr>
+<td>Huawei</td>
+<td><code>com.huawei.appmarket</code></td>
+</tr>
+<tr>
+<td>Honor</td>
+<td><code>com.hihonor.appmarket</code></td>
+</tr>
+<tr>
+<td>OPPO / OnePlus</td>
+<td><code>com.heytap.market</code></td>
+</tr>
+<tr>
+<td>vivo / iQOO</td>
+<td><code>com.bbk.appstore</code></td>
+</tr>
+<tr>
+<td>Realme</td>
+<td><code>com.oppo.market</code></td>
+</tr>
+<tr>
+<td>Samsung</td>
+<td><code>com.sec.android.app.samsungapps</code></td>
+</tr>
+<tr>
+<td>其他</td>
+<td><code>com.android.vending</code></td>
+</tr>
+</tbody>
+</table>
+<pre><code class="language-ts">if (isAndroid) {
+    const market = com.ajaxjs.nativescript.android.utils.MarketRedirect;
+    const context = Application.android.context;
+    market.redirect(context);
+}
+</code></pre>
+<p>跳转使用 <code>ACTION_VIEW</code>、<code>market://details?id=…</code>、指定市场包名及 <code>FLAG_ACTIVITY_NEW_TASK</code>。目标应用应传包名，不传网站 URL 或应用名称。找不到可处理的 Activity 或发生 SecurityException 时记录日志，返回 <code>void</code>；当前实现没有浏览器回退、其他市场回退或成功回调。</p>
+<p>Android 11 及以上的包可见性会影响 <code>isPackageInstalled</code>。宿主可按实际需要在 <code>&lt;manifest&gt;</code> 下声明查询目标，例如：</p>
+<pre><code class="language-xml">&lt;queries&gt;
+    &lt;package android:name=&quot;com.android.vending&quot; /&gt;
+&lt;/queries&gt;
+</code></pre>
+<p>查询为 <code>false</code> 不一定表示应用未安装。<code>redirect</code> 直接尝试启动市场，不以前置安装查询作为跳转条件。</p>
+<h2>源码与原生构建</h2>
+<p>源码位于 <code>android/nativescipt-common/aj-nativescript/src/main/java/com/ajaxjs/nativescript/android/utils/Helper.java</code> 和同目录 <code>MarketRedirect.java</code>；原生方法声明位于插件 <code>types/ajaxjs-nativescript.d.ts</code>。</p>
+<p>JAR 构建、复制与 SDK 配置见 <a href="../android-native/">安卓原生工具：原生工程与构建</a>。本文按当前源码整理接口，不表示所有厂商市场、权限场景均已完成实机验证。</p>
+
+            </article>
+        </div>
+        <footer>
+             AJ NativeScript 开源框架 <a href="https://framework.ajaxjs.com" target="_blank">AJ-Framework</a> 的一部分。联系方式：
+             frank@ajaxjs.com，<a href="https://blog.csdn.net/zhangxin09" target="_blank">作者博客</a>
+             <br />
+             <br />
+             Copyright © 2026 Frank Cheung. All rights reserved.
+         </footer>
+    </body>
+</html>

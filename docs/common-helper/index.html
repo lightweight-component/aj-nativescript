@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="utf-8"/>
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
+        <title>AJ NativeScript-通用工具</title>
+        <meta name="description" content="Android 与 iOS 一致的 Toast 和剪贴板 TypeScript 接口"/>
+        <meta name="keywords" content="NativeScript, NativeScript,通用工具"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1"/>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@200..900&family=Noto+Serif:ital,wght@0,100..900;1,100..900&display=swap&family=Noto+Sans+SC:wght@100..900&display=swap" />
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@100..900&family=Noto+Serif:ital,wght@0,100..900;1,100..900&display=swap" />
+        <link rel="stylesheet" href="https://framework.ajaxjs.com/static/new-ui/css/common.css" />
+        <script defer src="https://cdn.jsdelivr.net/npm/@highlightjs/cdn-assets@11.12.0/highlight.min.js"></script>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@highlightjs/cdn-assets@11.12.0/styles/github.min.css" />
+        <link rel="stylesheet" href="https://aj-util.ajaxjs.com/asset/main.css" />
+        <script src="https://aj-util.ajaxjs.com/asset/js/common.js"></script>
+        <script>
+            AJUtils.initTheme();
+            AJUtils.onReady(function () {
+                var button = document.querySelector('[data-document-language-toggle]');
+                var path = window.location.pathname;
+                AJUtils.bindThemeToggle();
+            });
+        </script>
+        <link rel="icon" type="image/png" href="https://nativescript.org/favicon-32x32.png" />
+
+        <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?734ea877e4a740968e40994221d9c877";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+        </script>
+    </head>
+    <body>
+        <nav>
+            <div>
+                <div class="links">
+                    <a href="/">🏠 首页</a>
+                    | ⚙️ 源码:
+                    <a target="_blank" href="https://github.com/lightweight-component/aj-nativescript">Github</a>/<a target="_blank" href="https://gitcode.com/lightweight-component/aj-nativescript">Gitcode</a>
+                    |
+                    <button class="theme-toggle" type="button" data-theme-toggle aria-label="切换主题" title="切换主题">☾</button>
+                </div>
+                <h1>AJ NativeScript</h1>
+                <h3>跨平台 App 开发</h3>
+            </div>
+        </nav>
+        <div class="docs-layout">
+            <menu class="docs-navigation" aria-label="文档导航">
+                <ul>
+                    <li class="selected">
+                        <a href="/docs">简介</a>
+                    </li>
+                </ul>
+
+                <h3>封装的功能</h3>
+                <ul>
+                 <li>
+                      <a href="/keystore-aes">KeyStore 与 AES</a>
+                  </li>
+                  <li>
+                      <a href="/ios">iOS 工具类</a>
+                  </li>
+                  <li>
+                      <a href="/common-helper">通用工具</a>
+                  </li>
+                  <li>
+                      <a href="/android">安卓工具类</a>
+                  </li>
+                 <li>
+                      <a href="/android-native">安卓原生工具</a>
+                  </li>
+                </ul>
+                <h3>MQTT 封装</h3>
+                <ul>
+                    <li><a href="/mqttv3">MQTTv3</a></li>
+                    <li><a href="/mqttv5">MQTTv5</a></li>
+                </ul>
+                <h3>其他</h3>
+                <ul>
+                    <li><a href="/contact">联系</a></li>
+                </ul>
+
+            </menu>
+            <article class="aj-text chinese">
+                <h1>通用工具</h1>
+<p><code>nativescript-plugin/nativescipt-common/src/common-helper.ts</code> 定义 Android 与 iOS 共用的工具 API。业务代码使用相同的 TypeScript 方法签名，无需传入 Context 或分支判断平台。</p>
+<p>安装 <code>@ajax-js/nativescript-common</code> 后从包入口导入：</p>
+<pre><code class="language-ts">import { toast, copyToClipboard, getFromClipboard }
+    from '@ajax-js/nativescript-common';
+
+toast('保存成功');
+copyToClipboard('  中文 🔐\n第二行  ');
+const text: string = getFromClipboard();
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>方法</th>
+<th>参数</th>
+<th>返回值</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>toast(message: string): void</code></td>
+<td>提示文本；空白字符串忽略</td>
+<td>不等待显示或关闭</td>
+</tr>
+<tr>
+<td><code>copyToClipboard(str: string): void</code></td>
+<td>原始文本，允许空字符串</td>
+<td>正常返回表示原生写入完成</td>
+</tr>
+<tr>
+<td><code>getFromClipboard(): string</code></td>
+<td>无</td>
+<td>可读文本；没有可读内容时返回空字符串</td>
+</tr>
+</tbody>
+</table>
+<p>Android JAR 与 iOS XCFramework 随插件集成；更新原生组件后必须重新构建宿主 App，仅刷新 JS 不会更新原生能力。Android 当前 demo 最低为 API 26，iOS 插件最低为 iOS 15。</p>
+<h2>Toast</h2>
+<pre><code class="language-ts">toast('操作成功');
+</code></pre>
+<p>非空提示保留原始文本，纯空白提示不显示。Android 使用系统 Toast.LENGTH_SHORT，并自动获取应用 Context；后台线程调用由原生侧切回主线程。iOS 在前台活动窗口显示约两秒，连续调用替换旧提示，不阻挡触摸；没有活动窗口时只记录日志。</p>
+<p>返回 <code>void</code> 不表示提示已显示。提示样式、实际时长及连续提示行为由各平台实现决定，统一的是调用签名。包入口的 <code>toast</code> 会拒绝非字符串参数，不支持的平台或 Android 应用尚未初始化时抛出异常。</p>
+<h2>剪贴板</h2>
+<p>Android 和 iOS 使用相同的 TS 签名：</p>
+<pre><code class="language-ts">import { copyToClipboard, getFromClipboard } from '@ajax-js/nativescript-common';
+
+copyToClipboard('  中文 🔐\n第二行  ');
+const value: string = getFromClipboard();
+copyToClipboard('');
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>方法</th>
+<th>参数</th>
+<th>返回值</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>copyToClipboard(str: string): void</code></td>
+<td>原始字符串，允许空字符串</td>
+<td>正常返回表示原生写入完成</td>
+</tr>
+<tr>
+<td><code>getFromClipboard(): string</code></td>
+<td>无</td>
+<td>首个可读文本；无内容、不可读或系统未提供文本时为 <code>''</code></td>
+</tr>
+</tbody>
+</table>
+<p>不 trim 或规范化文本，保留空格、换行、Unicode 和前导零；空字符串也会写入，覆盖此前内容。非字符串参数抛出 TypeError。不支持的平台、原生组件缺失、旧组件缺少剪贴板接口、Android Context 未初始化或原生访问失败时抛出异常。</p>
+<p>这是同步接口，应在前台页面主线程响应用户点击调用。系统可能显示复制提示或粘贴授权；后台访问和跨应用读取受系统隐私规则限制，返回空字符串不能区分空内容与系统未提供内容，接口不绕过权限。</p>
+<p>Android 使用 ClipboardManager，读取 ClipData 的首个项目并调用 coerceToText；URI 等非文本项目可能转换为文本。iOS 使用 UIPasteboard.general.string，只读取首个字符串，不提供图片或文件读取。iOS 后台线程调用会同步切回主线程，调用方不能在主线程阻塞等待该后台线程，否则可能死锁。</p>
+<p>已在 Pixel 9 Pro XL / Android 15（API 35）与 iPhone 17 Pro / iOS 26.5 模拟器通过文本自检，双端日志均出现 <code>CLIPBOARD_SELF_CHECK:PASS</code>；iOS 另手动验证复制与读取按钮。跨应用粘贴授权、后台访问限制及图片/URI 场景未作实机验证。</p>
+<p>完整实现位于插件 <code>src/common-helper.ts</code>。原生更新后需重新构建宿主 App。demo-app 的“测试”tab → “剪贴板测试”提供输入、复制、读取和自检按钮；读取结果用 JSON 字符串展示以便检查空白。自检验证 Unicode、换行、空白、空字符串和覆盖，日志成功标记为 <code>CLIPBOARD_SELF_CHECK:PASS</code>。自检结束恢复先前可读文本，不能恢复剪贴板图片、多项目或其他原始格式。</p>
+<h2>相关文档</h2>
+<ul>
+<li><a href="../android/">安卓工具类</a>：Helper 和 MarketRedirect 的 Android 专用 TS 调用。</li>
+<li><a href="../ios/">iOS 工具类</a>：应用版本、App Store 和方向等 iOS 专用能力。</li>
+<li><a href="../android-native/">安卓原生工具</a>：供 Java 原生代码使用的 HttpRequest 和 Utils。</li>
+<li><a href="../keystore-aes/">KeyStore 与 AES</a>：密钥管理、AES-GCM / AAD 和机器人 HKDF 派生协议。</li>
+</ul>
+
+            </article>
+        </div>
+        <footer>
+             AJ NativeScript 开源框架 <a href="https://framework.ajaxjs.com" target="_blank">AJ-Framework</a> 的一部分。联系方式：
+             frank@ajaxjs.com，<a href="https://blog.csdn.net/zhangxin09" target="_blank">作者博客</a>
+             <br />
+             <br />
+             Copyright © 2026 Frank Cheung. All rights reserved.
+         </footer>
+    </body>
+</html>

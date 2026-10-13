@@ -19,6 +19,7 @@
             <Label :text="text.testTitle" fontSize="24" fontWeight="bold" />
             <Label :text="text.testHint" class="muted" textWrap="true" />
             <Button text="Toast 测试" @tap="showToastDemo" />
+            <Button text="剪贴板测试" @tap="openClipboard" />
             <Button :text="text.aes" @tap="openAes" />
             <Button :text="text.mqtt3" @tap="openMqtt" />
             <Button :text="text.mqtt5" @tap="openMqttV5" />
@@ -60,12 +61,13 @@
 
 <script setup lang="ts">
 import { $navigateTo } from 'nativescript-vue';
-import { isIOS, ApplicationSettings, Dialogs, type EventData, TabView } from '@nativescript/core';
+import { Application, isAndroid, isIOS, ApplicationSettings, Dialogs, type EventData, TabView } from '@nativescript/core';
 import { text, pageClass, isDark, refreshSystemAppearance } from '../common/preferences';
 import { toast, com as commonNative } from '@ajax-js/nativescript-common';
 import Settings from './Settings.vue';
 import About from './About.vue';
 import AesDemo from './AesDemo.vue';
+import ClipboardDemo from './ClipboardDemo.vue';
 import MqttDemo from './MqttDemo.vue';
 import MqttV5Demo from './MqttV5Demo.vue';
 
@@ -84,6 +86,12 @@ function initializeTabs(args: EventData) {
     (args.object as TabView).selectedIndex = autoCheck ? 1 : 0;
     if (autoCheck)
       openAes();
+    const clipboardAutoCheck = ApplicationSettings.getBoolean('clipboardAutoCheck', false)
+      || (isAndroid && Application.android.startActivity?.getIntent()?.getBooleanExtra('clipboardAutoCheck', false));
+    if (clipboardAutoCheck) {
+      (args.object as TabView).selectedIndex = 1;
+      openClipboard();
+    }
     if (ApplicationSettings.getBoolean('toastAutoCheck', false)) {
       (args.object as TabView).selectedIndex = 1;
       setTimeout(showToastDemo, 500);
@@ -100,6 +108,13 @@ function showToastDemo() {
     const helper = commonNative.ajaxjs.nativescript.ios.Helper;
     console.log(`IOS_HELPER_CHECK:${helper.getAppVersionName()}/${helper.getAppBuildNumber()}`);
   }
+}
+
+/**
+ * 在测试 tab 内打开剪贴板演示，保持底部导航可见。
+ */
+function openClipboard() {
+  $navigateTo(ClipboardDemo, { frame: 'tests-frame' });
 }
 
 /**

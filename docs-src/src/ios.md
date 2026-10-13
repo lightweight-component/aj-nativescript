@@ -1,14 +1,17 @@
 ---
 title: iOS Helper 工具
 description: NativeScript iOS 的 Toast、应用版本、App Store 跳转与界面方向工具
-layout: layouts/docs.njk
+tags:
+  - iOS
+  - Toast
+layout: docs.njk
 ---
 
 # iOS Helper 工具
 
 `@ajax-js/nativescript-common` 提供 iOS 原生 Helper，包含 Toast、应用版本信息、App Store 跳转和界面方向设置。适用于 NativeScript 工程，与 Vue 视图层无关。
 
-插件最低支持 iOS 15；场景方向请求要求 iOS 16 及以上。Android 和 iOS 可共用 `toast(message)`，其余本文方法仅支持 iOS。
+插件最低支持 iOS 15；场景方向请求要求 iOS 16 及以上。Android 和 iOS 可共用 `toast(message)`、`copyToClipboard(str)` 和 `getFromClipboard()`，其他 Helper 工具仅支持 iOS。
 
 ## 安装与调用入口
 
@@ -41,6 +44,8 @@ if (isIOS) {
 
 | 方法 | 参数 | 返回值 | 最低系统版本 |
 | --- | --- | --- | --- |
+| `copyToClipboard(text)` | 原始字符串，允许空字符串 | `void`，同步写入 | iOS 15 |
+| `getFromClipboard()` | 无 | 字符串，不可读时为空字符串 | iOS 15 |
 | `showToast(message)` | 提示字符串 | `void` | iOS 15 |
 | `getAppVersionName()` | 无 | 版本名称字符串 | iOS 15 |
 | `getAppBuildNumber()` | 无 | 构建版本字符串 | iOS 15 |
@@ -52,17 +57,7 @@ if (isIOS) {
 
 ## Toast 提示
 
-### 统一 TS 方法
-
-```ts
-import { toast } from '@ajax-js/nativescript-common';
-
-toast('保存成功');
-```
-
-`toast(message: string): void` 在 Android 调用原有 `Helper.toast`，自动传入应用 Context；在 iOS 调用原生 `Helper.showToast`。调用方不需要自行处理平台差异。
-
-非字符串参数会抛出 `TypeError`。空白字符串直接忽略；非空消息在不支持的平台调用会抛出 `Error`。原生组件缺失或 Android 应用 Context 尚未初始化时也会抛出异常。
+跨平台 `toast(message)` 以及剪贴板复制、读取的统一签名、示例和模拟器结果见 [通用工具](../common-helper/)。本文仅补充 iOS Helper 的专用调用与平台实现行为。
 
 ### iOS 专用入口
 
@@ -82,6 +77,17 @@ iOS Toast 的行为如下：
 - UI 操作异步进入主线程；方法不等待提示显示或关闭。
 
 如果没有可用的活动窗口，原生端只记录日志，不显示提示，也不向 TS 返回显示结果。建议在页面已经显示后调用。
+
+## iOS 剪贴板原生入口
+
+跨平台业务代码使用 [通用工具](../common-helper/)。如需显式通过 iOS Helper 调用：
+
+```ts
+iosHelper.copyToClipboard('原始文本');
+const text: string = iosHelper.getFromClipboard();
+```
+
+两者通过 UIPasteboard.general.string 同步操作主线程；无可读字符串时返回空字符串，不提供图片读取。后台调用同步切回主线程，调用方不能在主线程等待该后台调用。系统粘贴授权与文本保留规则集中说明在通用工具页。
 
 ## 应用版本信息
 

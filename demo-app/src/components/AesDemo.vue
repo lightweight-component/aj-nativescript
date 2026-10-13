@@ -10,6 +10,7 @@
           <Label :text="status" textWrap="true" color="#245a86" />
           <ActivityIndicator :busy="busy" :visibility="busy ? 'visible' : 'collapsed'" />
           <Button text="运行本地加解密验证（含 AAD）" :isEnabled="!busy" @tap="selfCheck" />
+          <Button text="运行机器人设备密钥派生测试" :isEnabled="!busy" @tap="checkDeviceKey" />
           <Button text="运行 AAD 与旧方式兼容测试" :isEnabled="!busy" @tap="checkAssociatedData" />
           <Label text="自动使用临时测试密钥，结束后删除；下方逐项显示测试结果。" textWrap="true" />
           <Label v-for="result in aadResults" :key="result.name" :text="(result.passed ? '✓ ' : '✗ ') + result.name"
@@ -52,7 +53,7 @@
 <script lang="ts" setup>
 import { ref, onMounted, $navigateBack } from 'nativescript-vue';
 import { confirm, ApplicationSettings } from '@nativescript/core';
-import { provisionAesKey, importAesKey, hasAesKey, deleteAesKey, encryptJson, decryptJson, encryptJsonWithAssociatedData, decryptJsonWithAssociatedData, type EncryptedBody } from '@ajax-js/nativescript-common';
+import { provisionAesKey, importAesKey, hasAesKey, deleteAesKey, encryptJson, decryptJson, encryptJsonWithAssociatedData, decryptJsonWithAssociatedData, deriveRobotAesKey, deriveAndImportRobotAesKey, type EncryptedBody } from '@ajax-js/nativescript-common';
 
 /**
  * 返回测试列表，保留底部 tab 导航。
@@ -62,6 +63,7 @@ function back() {
 }
 
 import vectors from '../common/aes-vectors.json';
+import robotKeys from '../../../nativescript-plugin/nativescipt-common/test-vectors/robot-key-v2.json';
 
 const endpoint = ref('');
 const jwt = ref('');
@@ -152,10 +154,67 @@ function checkAssociatedData(): void {
   });
 }
 
+/**
+ * 使用公开主密钥和固定向量检查原生派生、MAC 编码、直接导入及 topic AAD。
+ * 不记录实际密钥，结束后清理全部临时别名。
+ */
+function verifyDeviceKey(): void {
+  for (const vector of robotKeys.vectors) {
+    if (deriveRobotAesKey(vector.masterKeyBase64, vector.robotMac) !== vector.derivedKeyBase64)
+      throw new Error('机器人设备密钥派生向量不匹配');
+  }
+  const vector = robotKeys.vectors[2];
+  for (const mac of ['AA:BB:CC:DD:EE:FF', 'AA-BB-CC-DD-EE-FF']) {
+    if (deriveRobotAesKey(vector.masterKeyBase64, mac) !== vector.derivedKeyBase64)
+      throw new Error('MAC 格式兼容失败');
+  }
+  const testAlias = `ajaxjs.aes.robot-check-${Date.now()}`;
+  const otherAlias = `${testAlias}-other`;
+  try {
+    deriveAndImportRobotAesKey(testAlias, vector.masterKeyBase64, vector.robotMac);
+    deriveAndImportRobotAesKey(otherAlias, vector.masterKeyBase64, robotKeys.vectors[3].robotMac);
+    if (!hasAesKey(testAlias))
+      throw new Error('派生密钥导入失败');
+    let rejected = false;
+    try {
+      deriveAndImportRobotAesKey(testAlias, vector.masterKeyBase64, vector.robotMac);
+    } catch {
+      rejected = true;
+    }
+    if (!rejected)
+      throw new Error('派生导入未拒绝重复别名');
+    const value = { message: '机器人 🔐', ok: true };
+    const topic = 'robot/aabbccddeeff/消息';
+    const body = encryptJsonWithAssociatedData(testAlias, value, topic);
+    if (JSON.stringify(decryptJsonWithAssociatedData(testAlias, body, topic)) !== JSON.stringify(value))
+      throw new Error('设备密钥 AAD 往返失败');
+    rejected = false;
+    try {
+      decryptJsonWithAssociatedData(otherAlias, body, topic);
+    } catch {
+      rejected = true;
+    }
+    if (!rejected)
+      throw new Error('其他设备密钥未被拒绝');
+  } finally {
+    cleanupTestKey(testAlias);
+    cleanupTestKey(otherAlias);
+  }
+  console.log('AES_ROBOT_KEY_CHECK:PASS');
+}
+
+function checkDeviceKey(): void {
+  void run(() => {
+    verifyDeviceKey();
+    status.value = '机器人设备密钥派生测试通过：固定向量、MAC 格式、原生导入、AAD 往返、设备隔离及清理';
+  });
+}
+
 function selfCheck() {
   void run(() => {
     aadResults.value = [];
     status.value = '正在运行本地加解密验证';
+    verifyDeviceKey();
     const testAlias = `ajaxjs.aes.check-${Date.now()}`;
     try {
       /*

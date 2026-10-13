@@ -10,8 +10,10 @@ import { Application, isAndroid, isIOS } from '@nativescript/core';
 export function toast(message: string): void {
     if (typeof message !== 'string')
         throw new TypeError('Toast message must be a string.');
+    
     if (!message.trim())
         return;
+
     if (isAndroid) {
         const context = Application.android?.context;
         if (!context)

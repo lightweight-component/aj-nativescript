@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="utf-8"/>
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
+        <title>AJ NativeScript-iOS Helper 工具</title>
+        <meta name="description" content="NativeScript iOS 的 Toast、应用版本、App Store 跳转与界面方向工具"/>
+        <meta name="keywords" content="NativeScript, iOS,Toast"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1"/>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@200..900&family=Noto+Serif:ital,wght@0,100..900;1,100..900&display=swap&family=Noto+Sans+SC:wght@100..900&display=swap" />
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@100..900&family=Noto+Serif:ital,wght@0,100..900;1,100..900&display=swap" />
+        <link rel="stylesheet" href="https://framework.ajaxjs.com/static/new-ui/css/common.css" />
+        <script defer src="https://cdn.jsdelivr.net/npm/@highlightjs/cdn-assets@11.12.0/highlight.min.js"></script>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@highlightjs/cdn-assets@11.12.0/styles/github.min.css" />
+        <link rel="stylesheet" href="https://aj-util.ajaxjs.com/asset/main.css" />
+        <script src="https://aj-util.ajaxjs.com/asset/js/common.js"></script>
+        <script>
+            AJUtils.initTheme();
+            AJUtils.onReady(function () {
+                var button = document.querySelector('[data-document-language-toggle]');
+                var path = window.location.pathname;
+                AJUtils.bindThemeToggle();
+            });
+        </script>
+        <link rel="icon" type="image/png" href="https://nativescript.org/favicon-32x32.png" />
+
+        <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?734ea877e4a740968e40994221d9c877";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+        </script>
+    </head>
+    <body>
+        <nav>
+            <div>
+                <div class="links">
+                    <a href="/">🏠 首页</a>
+                    | ⚙️ 源码:
+                    <a target="_blank" href="https://github.com/lightweight-component/aj-nativescript">Github</a>/<a target="_blank" href="https://gitcode.com/lightweight-component/aj-nativescript">Gitcode</a>
+                    |
+                    <button class="theme-toggle" type="button" data-theme-toggle aria-label="切换主题" title="切换主题">☾</button>
+                </div>
+                <h1>AJ NativeScript</h1>
+                <h3>跨平台 App 开发</h3>
+            </div>
+        </nav>
+        <div class="docs-layout">
+            <menu class="docs-navigation" aria-label="文档导航">
+                <ul>
+                    <li class="selected">
+                        <a href="/docs">简介</a>
+                    </li>
+                </ul>
+
+                <h3>封装的功能</h3>
+                <ul>
+                 <li>
+                      <a href="/keystore-aes">KeyStore 与 AES</a>
+                  </li>
+                  <li>
+                      <a href="/ios">iOS 工具类</a>
+                  </li>
+                  <li>
+                      <a href="/common-helper">通用工具</a>
+                  </li>
+                  <li>
+                      <a href="/android">安卓工具类</a>
+                  </li>
+                 <li>
+                      <a href="/android-native">安卓原生工具</a>
+                  </li>
+                </ul>
+                <h3>MQTT 封装</h3>
+                <ul>
+                    <li><a href="/mqttv3">MQTTv3</a></li>
+                    <li><a href="/mqttv5">MQTTv5</a></li>
+                </ul>
+                <h3>其他</h3>
+                <ul>
+                    <li><a href="/contact">联系</a></li>
+                </ul>
+
+            </menu>
+            <article class="aj-text chinese">
+                <h1>iOS Helper 工具</h1>
+<p><code>@ajax-js/nativescript-common</code> 提供 iOS 原生 Helper，包含 Toast、应用版本信息、App Store 跳转和界面方向设置。适用于 NativeScript 工程，与 Vue 视图层无关。</p>
+<p>插件最低支持 iOS 15；场景方向请求要求 iOS 16 及以上。Android 和 iOS 可共用 <code>toast(message)</code>、<code>copyToClipboard(str)</code> 和 <code>getFromClipboard()</code>，其他 Helper 工具仅支持 iOS。</p>
+<h2>安装与调用入口</h2>
+<pre><code class="language-sh">npm install @ajax-js/nativescript-common
+</code></pre>
+<p>已发布的 npm 包携带 <code>platforms/ios/AjaxJSCommon.xcframework</code>，NativeScript 在 iOS 构建时集成原生组件，无需在宿主重复复制 Swift 源码。</p>
+<pre><code class="language-ts">import { isIOS } from '@nativescript/core';
+import { toast, com as commonNative } from '@ajax-js/nativescript-common';
+
+const iosHelper = commonNative.ajaxjs.nativescript.ios.Helper;
+
+toast('操作成功');
+
+if (isIOS) {
+    const version = iosHelper.getAppVersionName();
+    const build = iosHelper.getAppBuildNumber();
+    console.log(`应用版本：${version}，构建版本：${build}`);
+}
+</code></pre>
+<p><code>com</code> 是插件导出的 TS 命名空间，请从插件显式导入。它不是 iOS 系统提供的全局 Java 包；使用 <code>com as commonNative</code> 可以避免与 Android 全局 <code>com</code> 混淆。仅创建上述 <code>iosHelper</code> 引用不会调用原生方法。</p>
+<p>所有 Helper 方法均为静态方法，无需创建实例。在非 iOS 平台调用这些方法会抛出 <code>Error</code>；缺少 XCFramework 时也会抛出 <code>Error</code>。</p>
+<h2>方法概览</h2>
+<table>
+<thead>
+<tr>
+<th>方法</th>
+<th>参数</th>
+<th>返回值</th>
+<th>最低系统版本</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>copyToClipboard(text)</code></td>
+<td>原始字符串，允许空字符串</td>
+<td><code>void</code>，同步写入</td>
+<td>iOS 15</td>
+</tr>
+<tr>
+<td><code>getFromClipboard()</code></td>
+<td>无</td>
+<td>字符串，不可读时为空字符串</td>
+<td>iOS 15</td>
+</tr>
+<tr>
+<td><code>showToast(message)</code></td>
+<td>提示字符串</td>
+<td><code>void</code></td>
+<td>iOS 15</td>
+</tr>
+<tr>
+<td><code>getAppVersionName()</code></td>
+<td>无</td>
+<td>版本名称字符串</td>
+<td>iOS 15</td>
+</tr>
+<tr>
+<td><code>getAppBuildNumber()</code></td>
+<td>无</td>
+<td>构建版本字符串</td>
+<td>iOS 15</td>
+</tr>
+<tr>
+<td><code>openAppInAppStore(appleID, isInternational?)</code></td>
+<td>数字 ID 字符串；是否不限定地区，默认 <code>false</code></td>
+<td><code>void</code></td>
+<td>iOS 15</td>
+</tr>
+<tr>
+<td><code>setLandscapeOrientation()</code></td>
+<td>无</td>
+<td><code>void</code></td>
+<td>iOS 15</td>
+</tr>
+<tr>
+<td><code>setPortraitOrientation()</code></td>
+<td>无</td>
+<td><code>void</code></td>
+<td>iOS 15</td>
+</tr>
+<tr>
+<td><code>requestOrientationChange()</code></td>
+<td>无</td>
+<td><code>void</code></td>
+<td>iOS 16</td>
+</tr>
+<tr>
+<td><code>forcePortrait()</code></td>
+<td>无</td>
+<td><code>void</code></td>
+<td>iOS 16</td>
+</tr>
+</tbody>
+</table>
+<h2>Toast 提示</h2>
+<p>跨平台 <code>toast(message)</code> 以及剪贴板复制、读取的统一签名、示例和模拟器结果见 <a href="../common-helper/">通用工具</a>。本文仅补充 iOS Helper 的专用调用与平台实现行为。</p>
+<h3>iOS 专用入口</h3>
+<pre><code class="language-ts">import { com as commonNative } from '@ajax-js/nativescript-common';
+
+commonNative.ajaxjs.nativescript.ios.Helper.showToast('保存成功');
+</code></pre>
+<p>iOS Toast 的行为如下：</p>
+<ul>
+<li>在前台活动窗口显示，约两秒后自动消失。</li>
+<li>连续调用替换旧提示，并重新计算显示时间。</li>
+<li>空白消息不显示，也不打断已有提示；有效消息保留原始文本。</li>
+<li>不使用模态弹窗，不阻挡底下的触摸操作。</li>
+<li>默认位于底部安全区域上方，并通过约束避开键盘。</li>
+<li>UI 操作异步进入主线程；方法不等待提示显示或关闭。</li>
+</ul>
+<p>如果没有可用的活动窗口，原生端只记录日志，不显示提示，也不向 TS 返回显示结果。建议在页面已经显示后调用。</p>
+<h2>iOS 剪贴板原生入口</h2>
+<p>跨平台业务代码使用 <a href="../common-helper/">通用工具</a>。如需显式通过 iOS Helper 调用：</p>
+<pre><code class="language-ts">iosHelper.copyToClipboard('原始文本');
+const text: string = iosHelper.getFromClipboard();
+</code></pre>
+<p>两者通过 UIPasteboard.general.string 同步操作主线程；无可读字符串时返回空字符串，不提供图片读取。后台调用同步切回主线程，调用方不能在主线程等待该后台调用。系统粘贴授权与文本保留规则集中说明在通用工具页。</p>
+<h2>应用版本信息</h2>
+<pre><code class="language-ts">const version: string = iosHelper.getAppVersionName();
+const build: string = iosHelper.getAppBuildNumber();
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>方法</th>
+<th>读取字段</th>
+<th>读取失败时的行为</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>getAppVersionName()</code></td>
+<td>宿主应用 Info.plist 的 <code>CFBundleShortVersionString</code></td>
+<td>记录日志并返回 <code>&quot;Unknown&quot;</code></td>
+</tr>
+<tr>
+<td><code>getAppBuildNumber()</code></td>
+<td>宿主应用 Info.plist 的 <code>CFBundleVersion</code></td>
+<td>记录日志并返回 <code>&quot;Unknown&quot;</code></td>
+</tr>
+</tbody>
+</table>
+<p>读取的是当前宿主 App 的版本，不是 npm 插件或 Framework 的版本。构建版本按字符串返回，不应假定为整数。</p>
+<h2>打开 App Store</h2>
+<pre><code class="language-ts">/*
+ * 示例 ID 请替换为实际应用的 App Store 数字 ID。
+ */
+const appleID = '123456789';
+
+iosHelper.openAppInAppStore(appleID);
+iosHelper.openAppInAppStore(appleID, true);
+</code></pre>
+<p><code>openAppInAppStore(appleID: string, isInternational = false): void</code>：</p>
+<ul>
+<li><code>appleID</code> 必须是非空的 ASCII 数字字符串，不包含 <code>id</code> 前缀、空格或完整 URL。</li>
+<li>默认 <code>false</code> 使用中国区路径 <code>/cn/app/id…</code>。</li>
+<li><code>true</code> 使用不限定地区的路径 <code>/app/id…</code>，不会自动选择另一个应用 ID。国内版、国际版若有不同 ID，须由调用方传入对应值。</li>
+</ul>
+<p>组件先尝试 <code>itms-apps://apps.apple.com…</code>，根据实际打开回调判断结果；失败后尝试对应的 <code>https://apps.apple.com…</code> 链接。无效 ID、URL 构造失败或两个入口均失败时记录日志。</p>
+<p>该方法允许从后台线程调用，内部切换到主线程。返回 <code>void</code>，不等待打开完成，不提供打开成功的布尔值或 Promise。</p>
+<h2>界面方向</h2>
+<h3>iOS 16 及以上：场景请求</h3>
+<pre><code class="language-ts">import { Device, isIOS } from '@nativescript/core';
+
+if (isIOS &amp;&amp; Number.parseInt(Device.osVersion, 10) &gt;= 16) {
+    iosHelper.requestOrientationChange();
+}
+</code></pre>
+<ul>
+<li><code>requestOrientationChange()</code> 请求窗口场景切换为<strong>横屏向右</strong>。</li>
+<li><code>forcePortrait()</code> 请求窗口场景切换为<strong>竖屏</strong>。</li>
+</ul>
+<p>TS 包装层在低于 iOS 16 时抛出 <code>Error</code>。原生调用异步切回主线程；当前实现从 <code>connectedScenes</code> 的首个场景获取 <code>UIWindowScene</code>，多窗口应用不能通过参数指定目标场景。没有可用场景时不执行请求，系统拒绝时通过回调记录日志。</p>
+<p>方法名称中的“force”不代表能够绕过系统限制。宿主必须配置支持的方向，当前视图控制器也必须允许该方向；返回 <code>void</code> 不表示旋转一定成功。</p>
+<h3>保留的设备方向方法</h3>
+<pre><code class="language-ts">iosHelper.setLandscapeOrientation();
+iosHelper.setPortraitOrientation();
+</code></pre>
+<p><code>setLandscapeOrientation()</code> 使用原工程的设备方向设置方式切换为<strong>横屏向左</strong>，<code>setPortraitOrientation()</code> 切换为<strong>竖屏</strong>。两者通过 <code>UIDevice</code> 的 <code>orientation</code> 设置方向，后台调用会异步进入主线程。</p>
+<p>这些方法保留原实现，仍受系统和宿主方向配置限制。iOS 16 及以上建议使用场景请求方法；不要把设备方向设置视为可靠的旋转成功通知。</p>
+<h2>原生工程与桥接</h2>
+<p>Swift 源码位于：</p>
+<pre><code class="language-text">ios/nativescipt-common/Sources/com/ajaxjs/nativescript/ios/
+├── Helper.swift
+└── AppToast.swift
+</code></pre>
+<p>Swift 使用 Framework 模块，没有 Java 式的包机制。上述目录组织对应 TS 的 <code>com.ajaxjs.nativescript.ios.Helper</code> 命名空间；原生 <code>Helper</code> 继承 <code>NSObject</code>，通过 <code>@objcMembers</code> 暴露方法，Objective-C 类名为 <code>AjaxJSIOSHelper</code>，避免与宿主已有的 <code>Helper</code> 冲突。<code>AppToast</code> 是内部实现，不提供公开调用入口。</p>
+<p>直接通过 NativeScript 调用原生类时：</p>
+<pre><code class="language-ts">AjaxJSIOSHelper.showToast('提示消息');
+const version = AjaxJSIOSHelper.getAppVersionName();
+AjaxJSIOSHelper.openAppInAppStoreIsInternational('123456789', true);
+</code></pre>
+<p>业务代码优先使用 TS 包装层。直接调用原生的 <code>requestOrientationChange()</code>、<code>forcePortrait()</code> 时，必须自行检查 iOS 16 可用性。</p>
+<p>原生日志使用 subsystem <code>com.ajaxjs.nativescript.ios</code>，category 为 <code>Helper</code> 或 <code>Toast</code>。版本缺失、活动窗口缺失、App Store 打开失败和方向请求失败可通过这些日志排查。</p>
+<h2>构建与验证</h2>
+<p>从源码单独重建 iOS 产物，在 <code>nativescript-plugin/nativescipt-common</code> 目录执行：</p>
+<pre><code class="language-sh">npm run build:ios
+npm run build
+</code></pre>
+<p>构建脚本使用独立 Xcode Framework 工程，生成真机 arm64 和模拟器 arm64/x86_64 的 XCFramework，并复制到插件 <code>platforms/ios</code>。使用当前工程的 Xcode 27 和 iOS 15 部署目标；更新后需要重新构建宿主 App，确保加载最新原生接口。</p>
+<p>demo-app 的“测试”tab 提供“Toast 测试”按钮，保留底部 tabs。已在 iPhone 17 Pro / iOS 26.5 模拟器验证 Toast 显示、自动消失及宿主版本读取；App Store 跳转和实际界面旋转尚未执行验证。</p>
+
+            </article>
+        </div>
+        <footer>
+             AJ NativeScript 开源框架 <a href="https://framework.ajaxjs.com" target="_blank">AJ-Framework</a> 的一部分。联系方式：
+             frank@ajaxjs.com，<a href="https://blog.csdn.net/zhangxin09" target="_blank">作者博客</a>
+             <br />
+             <br />
+             Copyright © 2026 Frank Cheung. All rights reserved.
+         </footer>
+    </body>
+</html>

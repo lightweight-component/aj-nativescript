@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="utf-8"/>
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
+        <title>AJ NativeScript-安卓原生工具</title>
+        <meta name="description" content="供 Android Java 原生组件内部使用的 HTTP、时间和随机字符串工具"/>
+        <meta name="keywords" content="NativeScript, Android,Java"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1"/>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@200..900&family=Noto+Serif:ital,wght@0,100..900;1,100..900&display=swap&family=Noto+Sans+SC:wght@100..900&display=swap" />
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@100..900&family=Noto+Serif:ital,wght@0,100..900;1,100..900&display=swap" />
+        <link rel="stylesheet" href="https://framework.ajaxjs.com/static/new-ui/css/common.css" />
+        <script defer src="https://cdn.jsdelivr.net/npm/@highlightjs/cdn-assets@11.12.0/highlight.min.js"></script>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@highlightjs/cdn-assets@11.12.0/styles/github.min.css" />
+        <link rel="stylesheet" href="https://aj-util.ajaxjs.com/asset/main.css" />
+        <script src="https://aj-util.ajaxjs.com/asset/js/common.js"></script>
+        <script>
+            AJUtils.initTheme();
+            AJUtils.onReady(function () {
+                var button = document.querySelector('[data-document-language-toggle]');
+                var path = window.location.pathname;
+                AJUtils.bindThemeToggle();
+            });
+        </script>
+        <link rel="icon" type="image/png" href="https://nativescript.org/favicon-32x32.png" />
+
+        <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?734ea877e4a740968e40994221d9c877";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+        </script>
+    </head>
+    <body>
+        <nav>
+            <div>
+                <div class="links">
+                    <a href="/">🏠 首页</a>
+                    | ⚙️ 源码:
+                    <a target="_blank" href="https://github.com/lightweight-component/aj-nativescript">Github</a>/<a target="_blank" href="https://gitcode.com/lightweight-component/aj-nativescript">Gitcode</a>
+                    |
+                    <button class="theme-toggle" type="button" data-theme-toggle aria-label="切换主题" title="切换主题">☾</button>
+                </div>
+                <h1>AJ NativeScript</h1>
+                <h3>跨平台 App 开发</h3>
+            </div>
+        </nav>
+        <div class="docs-layout">
+            <menu class="docs-navigation" aria-label="文档导航">
+                <ul>
+                    <li class="selected">
+                        <a href="/docs">简介</a>
+                    </li>
+                </ul>
+
+                <h3>封装的功能</h3>
+                <ul>
+                 <li>
+                      <a href="/keystore-aes">KeyStore 与 AES</a>
+                  </li>
+                  <li>
+                      <a href="/ios">iOS 工具类</a>
+                  </li>
+                  <li>
+                      <a href="/common-helper">通用工具</a>
+                  </li>
+                  <li>
+                      <a href="/android">安卓工具类</a>
+                  </li>
+                 <li>
+                      <a href="/android-native">安卓原生工具</a>
+                  </li>
+                </ul>
+                <h3>MQTT 封装</h3>
+                <ul>
+                    <li><a href="/mqttv3">MQTTv3</a></li>
+                    <li><a href="/mqttv5">MQTTv5</a></li>
+                </ul>
+                <h3>其他</h3>
+                <ul>
+                    <li><a href="/contact">联系</a></li>
+                </ul>
+
+            </menu>
+            <article class="aj-text chinese">
+                <h1>安卓原生工具</h1>
+<p>本文面向 Android Java 原生组件的开发与维护，介绍 <code>android/nativescipt-common</code> 中的 HttpRequest 和 Utils。它们随公共 JAR 提供，用于原生模块内部复用；本文不提供 NativeScript TS 调用入口或接口代理示例。</p>
+<p>业务 TS 使用 <a href="../common-helper/">通用工具</a> 或 <a href="../android/">安卓工具类</a>。密钥管理与加解密单独见 <a href="../keystore-aes/">KeyStore 与 AES</a>。当前 demo-app 最低 Android 8.0（API 26），Java 工程使用 Java 8 源码与目标兼容配置。</p>
+<h2>联网权限</h2>
+<p>HTTP 请求要求宿主在 AndroidManifest.xml 的 <code>&lt;manifest&gt;</code> 下声明 INTERNET 权限，无需运行时申请：</p>
+<pre><code class="language-xml">&lt;uses-permission android:name=&quot;android.permission.INTERNET&quot; /&gt;
+</code></pre>
+<h2>HttpRequest：后台 GET 与 JSON POST</h2>
+<p>原生类：<code>com.ajaxjs.nativescript.android.utils.HttpRequest</code>。此类供 Android 原生组件内部使用，本文以 Java 调用说明，不作为面向业务 TS 的工具 API。</p>
+<table>
+<thead>
+<tr>
+<th>方法</th>
+<th>参数说明</th>
+<th>返回值</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>get(url, callback)</code></td>
+<td>默认网络；正文回调</td>
+<td><code>void</code></td>
+</tr>
+<tr>
+<td><code>get(url, callback, headerConsumer)</code></td>
+<td>默认网络；发送前配置请求头</td>
+<td><code>void</code></td>
+</tr>
+<tr>
+<td><code>get(url, callback, network, headerConsumer)</code></td>
+<td>可指定 <code>android.net.Network</code>；请求头回调可为空</td>
+<td><code>void</code></td>
+</tr>
+<tr>
+<td><code>get(url, callback, network, headerConsumer, onError)</code></td>
+<td>增加错误回调</td>
+<td><code>void</code></td>
+</tr>
+<tr>
+<td><code>post(url, body, callback, network, onError)</code></td>
+<td>JSON 文本；网络可为空；错误回调可为空</td>
+<td><code>void</code></td>
+</tr>
+<tr>
+<td><code>readInputStream(input)</code></td>
+<td>UTF-8 输入流，可为空</td>
+<td>去除首尾空白后的字符串；输入流为空时为空字符串；读取失败抛出 UncheckedIOException</td>
+</tr>
+</tbody>
+</table>
+<p>回调参数使用 Java <code>java.util.function.Consumer</code>：正文与错误回调接受字符串；<code>headerConsumer</code> 接受 HttpURLConnection。以下示例供 Android Java 原生代码调用：</p>
+<pre><code class="language-java">import android.util.Log;
+import com.ajaxjs.nativescript.android.utils.HttpRequest;
+import java.util.function.Consumer;
+
+Consumer&lt;String&gt; success = body -&gt; Log.d(&quot;HTTP_DEMO&quot;, &quot;Response length: &quot; + body.length());
+Consumer&lt;String&gt; failure = error -&gt; Log.e(&quot;HTTP_DEMO&quot;, error);
+
+HttpRequest.get(&quot;https://example.com/api/status&quot;, success, null,
+        connection -&gt; connection.setRequestProperty(&quot;Accept&quot;, &quot;application/json&quot;), failure);
+HttpRequest.post(&quot;https://example.com/api/command&quot;, &quot;{\&quot;command\&quot;:\&quot;stop\&quot;}&quot;,
+        success, null, failure);
+</code></pre>
+<p>示例语句放在 Java 方法体内，URL 替换为实际服务。请求通过进程级单线程 Executor 串行执行，成功和错误回调均在后台线程、连接释放后调用。更新原生 UI 应通过主线程 Handler 或 Activity.runOnUiThread 调度；耗时回调会延迟后续请求，组件没有取消接口。回调自身的异常不会被当作请求失败或再次触发错误回调。</p>
+<p>GET 的连接 / 读取超时分别为 5 / 10 秒；POST 分别为 55 / 50 秒。GET 可在发送前配置请求头；POST 当前没有自定义请求头参数，非空 body 自动设置 <code>Content-Type: application/json</code> 并按 UTF-8 写入，但不验证正文是否为合法 JSON。空 body 不写入请求体，也不设置该 Content-Type。</p>
+<p>HTTP 2xx 触发成功回调；非 2xx 或请求异常触发 <code>onError</code>，未传错误回调时仅记录日志，不调用成功回调。正文读取会去掉首尾空白，并将逐行内容重组为换行分隔文本，不适合依赖原始字节、签名、二进制或精确空白的响应。</p>
+<p>网络参数为 <code>null</code> 时使用系统默认网络；非空时通过 <code>Network.openConnection</code> 使用指定网络，本工具不负责获取或绑定网络。宿主应声明 INTERNET 权限。工具未强制 HTTPS，也未主动禁用重定向，实际行为受 HttpURLConnection 和宿主网络安全配置影响。</p>
+<p>原生实现会记录 URL、响应正文及错误信息，不要用它传输秘密主密钥或敏感响应。密钥获取应使用插件现有的 HTTPS 配置接口，详见 <a href="../keystore-aes/">KeyStore 与 AES</a>，该接口有独立的协议与校验流程。</p>
+<h2>Utils：时间与随机字符串</h2>
+<p>原生类：<code>com.ajaxjs.nativescript.android.utils.Utils</code>，供原生代码使用，与 NativeScript 的同名 TS 工具不同。</p>
+<table>
+<thead>
+<tr>
+<th>方法</th>
+<th>参数</th>
+<th>返回值 / 异常</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>now()</code></td>
+<td>无</td>
+<td>设备当前时区的 <code>yyyy-MM-dd HH:mm:ss</code> 文本，不包含时区信息</td>
+</tr>
+<tr>
+<td><code>generateRandomString(length)</code></td>
+<td>非负整数，Java int</td>
+<td>大小写英文字母和数字组成的指定长度字符串；0 返回空字符串；负数抛出异常</td>
+</tr>
+</tbody>
+</table>
+<pre><code class="language-java">import com.ajaxjs.nativescript.android.utils.Utils;
+
+String time = Utils.now();
+String requestId = Utils.generateRandomString(16);
+</code></pre>
+<p>示例语句放在 Java 方法体内。</p>
+<p>随机字符串使用进程级 SecureRandom，在 62 个字符中逐位选择。它不是 AES 密钥的标准 Base64，也不是 12 字节 GCM nonce；AES nonce 由加密接口自动生成。MQTT 报文的 UTC Unix epoch 毫秒时间戳在 Java 中使用 <code>System.currentTimeMillis()</code>，不要用 <code>now()</code> 的本地时间文本替代。</p>
+<p>组件基础名称可由 <code>com.ajaxjs.nativescript.android.AjNativescript.getName()</code> 获取，固定返回 <code>&quot;aj-nativescript&quot;</code>，不代表版本号。</p>
+<h2>原生工程与构建</h2>
+<p>源码位于独立 Gradle 工程：</p>
+<pre><code class="language-text">android/nativescipt-common/aj-nativescript/src/main/java/com/ajaxjs/nativescript/android/
+├── AjNativescript.java
+├── utils/
+│   ├── Helper.java
+│   ├── MarketRedirect.java
+│   ├── HttpRequest.java
+│   └── Utils.java
+└── crypto/
+    ├── AesKeyStore.java
+    ├── JsonBodyCipher.java
+    ├── EncryptedBody.java
+    └── RobotKeyDerivation.java
+</code></pre>
+<p>在 <code>nativescript-plugin/nativescipt-common</code> 目录执行：</p>
+<pre><code class="language-sh">npm run build:native
+npm run build
+</code></pre>
+<p><code>build:native</code> 调用独立 Gradle 工程的 JAR 构建任务，复制产物到插件 <code>platforms/android/aj-nativescript.jar</code>；<code>build</code> 编译 TS。构建 Java 时仅引用 Android SDK 的 android.jar，不把 SDK 类打包到插件中。</p>
+<p>Windows 使用 <code>gradlew.bat</code>，macOS / Linux 使用 Gradle shell 包装脚本。SDK 路径可通过 <code>ANDROID_HOME</code>、<code>ANDROID_SDK_ROOT</code> 或原生工程 <code>local.properties</code> 的 <code>sdk.dir</code> 指定；当前默认编译 SDK 为 35，Java 源码和目标兼容版本为 8。</p>
+<p>完整 npm 打包与发布流程见组件 README。<code>npm pack</code> 会重建 Android JAR；iOS 产物的生成与复用按 iOS 构建脚本处理，Windows 不编译 Xcode 工程。更新后使用现有 demo-app 重新编译 Android App，通过“测试”tab 验证 Toast 和 AES 功能。</p>
+<p>本文按当前源码整理接口与实现行为，不表示所有厂商市场、权限场景和 HTTP 服务都已完成实机验证。</p>
+
+            </article>
+        </div>
+        <footer>
+             AJ NativeScript 开源框架 <a href="https://framework.ajaxjs.com" target="_blank">AJ-Framework</a> 的一部分。联系方式：
+             frank@ajaxjs.com，<a href="https://blog.csdn.net/zhangxin09" target="_blank">作者博客</a>
+             <br />
+             <br />
+             Copyright © 2026 Frank Cheung. All rights reserved.
+         </footer>
+    </body>
+</html>

@@ -140,6 +140,11 @@ declare namespace com.ajaxjs.nativescript.android {
              */
             static copyToClipboard(context: AjaxjsAndroidContext, text: string): void;
             /**
+             * 同步读取首个剪贴项目，尝试转换为文本；不可读时返回空字符串，不 trim。
+             * 应在前台响应用户操作调用；系统访问异常向调用方传播。
+             */
+            static getFromClipboard(context: AjaxjsAndroidContext): string;
+            /**
              * 显示短时 Toast；允许后台线程调用，内部切换到主线程显示。
              *
              * @param context 应用或页面上下文；null 时不显示。
@@ -347,9 +352,17 @@ declare class AjaxJSAes extends NSObject {
 
 /**
  * iOS 15+ 原生 Helper，Objective-C 名称避免与宿主 Helper 冲突。
- * UI 方法异步切换到主线程；无返回值，失败通过日志报告。
+ * UI 方法通常异步切换到主线程；剪贴板接口同步执行，具体返回值见各方法。
  */
 declare class AjaxJSIOSHelper extends NSObject {
+    /**
+     * 将文本原样写入通用剪贴板，允许空字符串；同步主线程执行。
+     */
+    static copyToClipboard(text: string): void;
+    /**
+     * 同步读取首个字符串，不 trim；不可读时为空字符串，系统可能要求粘贴授权。
+     */
+    static getFromClipboard(): string;
     /**
      * message 为提示文本；空白忽略，在活动窗口显示两秒，不阻挡触摸。
      */
@@ -386,4 +399,41 @@ declare class AjaxJSIOSHelper extends NSObject {
      * 仅 iOS 16+，请求场景竖屏；失败记录日志，无场景不执行。
      */
     static forcePortrait(): void;
+}
+
+/**
+ * Android robot key v1 HKDF-SHA256; master key is canonical Base64 of 16/24/32 bytes.
+ */
+declare namespace com.ajaxjs.nativescript.android.crypto {
+    class RobotKeyDerivation extends java.lang.Object {
+        /**
+         * Returns lowercase separator-free 12-digit MAC. Invalid input throws.
+         */
+        static normalizeMac(robotMac: string): string;
+        /**
+         * Returns secret Base64 of a 32-byte key. Invalid input or HMAC failure throws.
+         * salt=UTF8(ajaxjs/robot/key-derivation/v2); info=UTF8(normalized MAC).
+         */
+        static deriveKey(masterKeyBase64: string, robotMac: string): string;
+        /**
+         * Imports derived key under nonblank <=128-unit alias; no return value.
+         * Invalid input, duplicate alias, derivation or Keystore failure throws.
+         */
+        static deriveAndImportKey(alias: string, masterKeyBase64: string, robotMac: string): void;
+    }
+}
+/**
+ * iOS robot key v1 HKDF-SHA256. Errors are returned in CryptoResult.error.
+ */
+declare class AjaxJSRobotKey extends NSObject {
+    /**
+     * Parameters: canonical Base64 random 16/24/32-byte master, 12-digit or separated MAC.
+     * Success value is secret Base64 of a 32-byte key; invalid input returns error.
+     */
+    static deriveKeyRobotMac(masterKeyBase64: string, robotMac: string): AjaxJSCryptoResult;
+    /**
+     * Derives and imports under nonblank <=128-unit alias; success value true.
+     * Invalid input, duplicate alias, derivation or Keychain failure returns error.
+     */
+    static deriveAndImportKeyMasterKeyBase64RobotMac(alias: string, masterKeyBase64: string, robotMac: string): AjaxJSCryptoResult;
 }

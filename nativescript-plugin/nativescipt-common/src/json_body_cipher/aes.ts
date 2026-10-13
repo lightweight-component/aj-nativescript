@@ -133,7 +133,7 @@ export class AesGcm {
  */
 type JsonMsgBody = {
     /**
-     * 版本号，第一版为 1
+     * 版本号：既有协议为 1；机器人 HKDF 设备密钥协议为 2，由业务层设置和校验。
      */
     ver: number;
 

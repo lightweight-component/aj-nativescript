@@ -7,6 +7,31 @@ public final class Helper: NSObject {
     private static let logger: Logger = Logger(subsystem: "com.ajaxjs.nativescript.ios", category: "Helper");
 
     /**
+     * 将文本原样写入通用剪贴板，允许空字符串；正常返回时写入已完成。
+     * - Parameter text: 待复制文本，不 trim 或规范化。
+     * - Returns: 无；后台调用同步进入主线程，应优先在前台主线程调用。
+     */
+    public static func copyToClipboard(_ text: String) {
+        if Thread.isMainThread {
+            UIPasteboard.general.string = text;
+        } else {
+            DispatchQueue.main.sync { UIPasteboard.general.string = text; };
+        }
+    }
+
+    /**
+     * 同步读取通用剪贴板文本，保留空格、换行和 Unicode。
+     * - Returns: 首个字符串；不存在可读字符串时返回空字符串。
+     * 后台调用同步进入主线程；系统可能要求粘贴授权，返回值不代表授权状态。
+     */
+    public static func getFromClipboard() -> String {
+        if Thread.isMainThread {
+            return UIPasteboard.general.string ?? "";
+        }
+        return DispatchQueue.main.sync { UIPasteboard.general.string ?? ""; };
+    }
+
+    /**
      * 在当前活动窗口显示轻量 Toast，两秒后自动消失，不阻挡触摸操作。
      * - Parameter message: 要显示的提示内容；空白消息会忽略。
      * - Returns: 无；连续调用会替换旧提示，并重新计算显示时间。

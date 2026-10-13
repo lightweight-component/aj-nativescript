@@ -21,6 +21,10 @@ if (process.platform === 'darwin') {
     }
     for (const file of files.filter(file => file.endsWith('-Swift.h'))) {
         const header = readFileSync(new URL(`../platforms/ios/AjaxJSCommon.xcframework/${file}`, import.meta.url), 'utf8');
+        if (!header.includes('copyToClipboard:') || !header.includes('getFromClipboard'))
+            throw new Error('The XCFramework does not support clipboard access. Rebuild it on macOS before packing.');
+        if (!header.includes('@interface AjaxJSRobotKey') || !header.includes('deriveAndImportKey:'))
+            throw new Error('The XCFramework does not support robot key derivation. Rebuild it on macOS before packing.');
         if (!header.includes('encryptWithAssociatedData:') || !header.includes('decryptWithAssociatedData:'))
             throw new Error('The XCFramework does not support AAD. Rebuild it on macOS before packing.');
     }

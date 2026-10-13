@@ -9,8 +9,8 @@ common AES 原生功能支持 Android 8.0（API 26）及以上和 iOS 15 及以�
 | 组件文档 | 内容 | 状态 |
 | --- | --- | --- |
 | [common](nativescript-plugin/nativescipt-common/README.md) | Android 公共工具、Android Keystore / iOS Keychain 密钥管理、AES-GCM JSON 加解密 | 已实现 |
-| [MQTT v3](nativescript-plugin/nativescipt-mqtt-v3/README.md) | 基于 Eclipse Paho 的 MQTT 3.1.1 文本通讯 | 已实现 |
-| [MQTT v5](nativescript-plugin/nativescipt-mqtt-v5/README.md) | 基于 Eclipse Paho 的 MQTT 5.0 文本通讯 | 已实现 |
+| [MQTT v3](nativescript-plugin/nativescipt-mqtt-v3/README.md) | 基于 Eclipse Paho 的 MQTT 3.1.1 通讯 | 已实现 |
+| [MQTT v5](nativescript-plugin/nativescipt-mqtt-v5/README.md) | 基于 Eclipse Paho 的 MQTT 5.0 通讯 | 已实现 |
 
 各组件 README 包含安装、API、宿主配置、构建与发布说明。
 

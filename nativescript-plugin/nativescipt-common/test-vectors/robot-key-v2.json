@@ -1,0 +1,35 @@
+{
+  "protocol": "ajaxjs-robot-key-v2",
+  "saltHex": "616a61786a732f726f626f742f6b65792d64657269766174696f6e2f7632",
+  "outputByteCount": 32,
+  "vectors": [
+    {
+      "masterKeyBase64": "AAECAwQFBgcICQoLDA0ODw==",
+      "robotMac": "001122aabbcc",
+      "infoHex": "303031313232616162626363",
+      "derivedKeyHex": "fd3e1da5d6571e2cc7deda254fbea1a7bf5913d5253c8d89a915a91b1e6912bd",
+      "derivedKeyBase64": "/T4dpdZXHizH3tolT76hp79ZE9UlPI2JqRWpGx5pEr0="
+    },
+    {
+      "masterKeyBase64": "AAECAwQFBgcICQoLDA0ODxAREhMUFRYX",
+      "robotMac": "aabbccddeeff",
+      "infoHex": "616162626363646465656666",
+      "derivedKeyHex": "b39348bf1ff2d3bc3a1807bb8eee17fbb83e6c07a26f5e922bffc920d89e9326",
+      "derivedKeyBase64": "s5NIvx/y07w6GAe7ju4X+7g+bAeib16SK//JINiekyY="
+    },
+    {
+      "masterKeyBase64": "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8=",
+      "robotMac": "aabbccddeeff",
+      "infoHex": "616162626363646465656666",
+      "derivedKeyHex": "ab46f491645c7e09d90c1372c999b1b88e12369d4f5aeb3e5c264e3ce6de9277",
+      "derivedKeyBase64": "q0b0kWRcfgnZDBNyyZmxuI4SNp1PWus+XCZOPObeknc="
+    },
+    {
+      "masterKeyBase64": "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8=",
+      "robotMac": "aabbccddee00",
+      "infoHex": "616162626363646465653030",
+      "derivedKeyHex": "dde7ee76a4e2320d76c3adf40a1a5cb7eb5177634055a7bc4ea2545bec3ed1b3",
+      "derivedKeyBase64": "3efudqTiMg12w630Chpct+tRd2NAVae8TqJUW+w+0bM="
+    }
+  ]
+}
