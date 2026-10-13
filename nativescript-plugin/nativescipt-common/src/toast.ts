@@ -22,6 +22,7 @@ export function toast(message: string): void {
     } else if (isIOS) {
         if (typeof AjaxJSIOSHelper === 'undefined')
             throw new Error('AjaxJSCommon XCFramework is not installed.');
+        
         AjaxJSIOSHelper.showToast(message);
     } else {
         throw new Error('Toast requires Android or iOS.');

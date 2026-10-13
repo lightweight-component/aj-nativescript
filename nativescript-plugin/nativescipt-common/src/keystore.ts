@@ -22,9 +22,11 @@ export interface ProvisionKeyOptions {
      * 完整 HTTPS 密钥接口地址，不允许内嵌用户名、密码或 URL 片段。
      */
     endpoint: string;
+
     /**
      * JWT 原文，不含 Bearer 前缀；不能为空或包含换行符。
      */
+
     jwt: string;
     /**
      * 请求超时毫秒数，必须为有限正数；默认 15000。
@@ -196,6 +198,7 @@ export function encryptJsonWithAssociatedData(alias: string, value: unknown, ass
 export function decryptJsonWithAssociatedData<T = unknown>(alias: string, body: EncryptedBody, associatedData: string): T {
     if (typeof associatedData !== 'string')
         throw new Error('Associated data must be a string.');
+    
     if (!body || typeof body.nonce !== 'string' || typeof body.data !== 'string')
         throw new Error('Encrypted body must contain nonce and data strings.');
 

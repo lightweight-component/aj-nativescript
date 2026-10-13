@@ -32,18 +32,21 @@ export function toast(message: string): void {
 export function copyToClipboard(str: string): void {
     if (typeof str !== 'string')
         throw new TypeError('Clipboard text must be a string.');
+
     if (isAndroid) {
         const context = Utils.android.getApplicationContext();
+
         if (!context)
             throw new Error('Android application context is not available.');
+
         com.ajaxjs.nativescript.android.utils.Helper.copyToClipboard(context, str);
     } else if (isIOS) {
         if (typeof AjaxJSIOSHelper === 'undefined' || typeof AjaxJSIOSHelper.copyToClipboard !== 'function')
             throw new Error('Rebuild AjaxJSCommon XCFramework with clipboard support.');
+
         AjaxJSIOSHelper.copyToClipboard(str);
-    } else {
+    } else 
         throw new Error('Clipboard requires Android or iOS.');
-    }
 }
 
 /**
@@ -55,14 +58,19 @@ export function copyToClipboard(str: string): void {
 export function getFromClipboard(): string {
     if (isAndroid) {
         const context = Utils.android.getApplicationContext();
+
         if (!context)
             throw new Error('Android application context is not available.');
+
         return com.ajaxjs.nativescript.android.utils.Helper.getFromClipboard(context);
     }
+
     if (isIOS) {
         if (typeof AjaxJSIOSHelper === 'undefined' || typeof AjaxJSIOSHelper.getFromClipboard !== 'function')
             throw new Error('Rebuild AjaxJSCommon XCFramework with clipboard support.');
+
         return AjaxJSIOSHelper.getFromClipboard();
     }
+    
     throw new Error('Clipboard requires Android or iOS.');
 }
