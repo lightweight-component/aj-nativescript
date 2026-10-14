@@ -18,7 +18,9 @@
           <StackLayout padding="24" spacing="16">
             <Label :text="text.testTitle" fontSize="24" fontWeight="bold" />
             <Label :text="text.testHint" class="muted" textWrap="true" />
+            <Button text="列表与按钮事件测试" @tap="openListTap" />
             <Button text="Toast 测试" @tap="showToastDemo" />
+            <Button text="Toast 执行连续性测试" @tap="openToastFlow" />
             <Button text="剪贴板测试" @tap="openClipboard" />
             <Button :text="text.aes" @tap="openAes" />
             <Button :text="text.mqtt3" @tap="openMqtt" />
@@ -68,6 +70,8 @@ import Settings from './Settings.vue';
 import About from './About.vue';
 import AesDemo from './AesDemo.vue';
 import ClipboardDemo from './ClipboardDemo.vue';
+import ToastDemo from './ToastDemo.vue';
+import ListTapDemo from './ListTapDemo.vue';
 import MqttDemo from './MqttDemo.vue';
 import MqttV5Demo from './MqttV5Demo.vue';
 
@@ -92,6 +96,12 @@ function initializeTabs(args: EventData) {
       (args.object as TabView).selectedIndex = 1;
       openClipboard();
     }
+    const toastFlowAutoCheck = ApplicationSettings.getBoolean('toastFlowAutoCheck', false)
+      || (isAndroid && Application.android.startActivity?.getIntent()?.getBooleanExtra('toastFlowAutoCheck', false));
+    if (toastFlowAutoCheck) {
+      (args.object as TabView).selectedIndex = 1;
+      openToastFlow();
+    }
     if (ApplicationSettings.getBoolean('toastAutoCheck', false)) {
       (args.object as TabView).selectedIndex = 1;
       setTimeout(showToastDemo, 500);
@@ -108,6 +118,20 @@ function showToastDemo() {
     const helper = commonNative.ajaxjs.nativescript.ios.Helper;
     console.log(`IOS_HELPER_CHECK:${helper.getAppVersionName()}/${helper.getAppBuildNumber()}`);
   }
+}
+
+/**
+ * 打开列表事件对照页面，保留底部 tabs。
+ */
+function openListTap() {
+  $navigateTo(ListTapDemo, { frame: 'tests-frame' });
+}
+
+/**
+ * 在测试 tab 内打开 Toast 连续性测试，保留底部导航。
+ */
+function openToastFlow() {
+  $navigateTo(ToastDemo, { frame: 'tests-frame' });
 }
 
 /**

@@ -10,7 +10,8 @@ globalThis.__keystoreCore = {
     Http: { request: async (options) => { lastRequest = options; return response; } }
 };
 globalThis.com = { ajaxjs: { nativescript: { android: { crypto: {
-    AesKeyStore: { importKey: (...args) => imported.push(args) }
+    AesKeyStore: { importKey: (...args) => imported.push(args) },
+    JsonBodyCipher: {}
 } } } } };
 registerHooks({ resolve(specifier, context, next) {
     if (specifier === '@nativescript/core')
@@ -81,4 +82,16 @@ test('Android AAD methods preserve UTF-8 strings and JSON envelopes', () => {
     }
     assert.throws(() => aadApi.encryptJsonWithAssociatedData('test', undefined, ''), /JSON serializable/);
     assert.throws(() => aadApi.decryptJsonWithAssociatedData('test', {}, ''), /nonce and data/);
+});
+
+test('missing Android metadata reports a bridge error instead of an undefined property error', () => {
+    const original = globalThis.com;
+    try {
+        for (const missing of [undefined, {}, { ajaxjs: {} }, { ajaxjs: { nativescript: { android: { crypto: {} } } } }]) {
+            globalThis.com = missing;
+            assert.throws(() => encryptJson('test', { v: 1 }), /Android AES native bridge is unavailable.*native-api-usage/);
+        }
+    } finally {
+        globalThis.com = original;
+    }
 });

@@ -49,8 +49,12 @@ export interface ProvisionKeyResult {
 }
 
 function nativeCrypto() {
-    if (isAndroid)
-        return com.ajaxjs.nativescript.android.crypto;
+    if (isAndroid) {
+        const crypto = typeof com === 'undefined' ? undefined : com.ajaxjs?.nativescript?.android?.crypto;
+        if (!crypto?.AesKeyStore || !crypto?.JsonBodyCipher)
+            throw new Error('Android AES native bridge is unavailable. Rebuild the Android app with the common JAR and include com.ajaxjs.nativescript.android*:* in native-api-usage.json when using an API whitelist.');
+        return crypto;
+    }
 
     if (isIOS) {
         if (typeof AjaxJSAes === 'undefined')

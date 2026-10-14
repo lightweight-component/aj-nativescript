@@ -237,3 +237,13 @@ AES 实现使用 [Apple CryptoKit AES.GCM](https://developer.apple.com/documenta
 
 已验证（2026-10-10）：TS/桥接测试 6 项、Android JVM 测试 8 项、真机/模拟器 XCFramework 构建、
 完整 npm pack、demo Vue 类型检查、iOS 模拟器编译运行，以及生产 Android Cipher 与 CryptoKit 的 AES-128/192/256 双向互通。
+
+## Android 原生桥接与 API 白名单
+
+如果出现 `Cannot read properties of undefined (reading 'android')`，应先检查原生桥接，不是直接判定为 AES 密钥或 AAD 错误。APK 包含 JAR 类不代表 NativeScript 已生成它们的桥接元数据。
+
+启用了 `App_Resources/Android/native-api-usage.json` 的宿主，应保留现有配置，并在 `whitelist` 中加入 `com.ajaxjs.nativescript.android*:*`。旧工具包 `com.ajaxjs.android*:*` 与 common 插件的新包名不同，不能互相替代。
+
+common 插件也提供 `platforms/android/native-api-usage.json`，通过 `uses` 声明其原生包；宿主设置 `whitelist-plugins-usages: true` 时可自动合并。修改白名单后重新构建并安装 Android App，仅刷新 JS 不会更新桥接元数据。原生桥接缺失时，统一 AES 接口会抛出明确的桥接配置错误。
+
+Keystore 的查询、导入及加解密接口均为同步调用。使用固定本地密钥时，初始化应同步执行并放在同一个 try/catch 内；若将来通过网络取得密钥，应在处理 MQTT 消息前等待初始化完成，不能直接调用未等待的 async 初始化。

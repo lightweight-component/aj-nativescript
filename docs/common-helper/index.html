@@ -81,6 +81,10 @@
                     <li><a href="/mqttv3">MQTTv3</a></li>
                     <li><a href="/mqttv5">MQTTv5</a></li>
                 </ul>
+                <h3>NativeScript 使用经验</h3>
+                <ul>
+                    <li><a href="/exp/event-bubbling">事件上报</a></li>
+                </ul>
                 <h3>其他</h3>
                 <ul>
                     <li><a href="/contact">联系</a></li>
@@ -130,6 +134,9 @@ const text: string = getFromClipboard();
 </code></pre>
 <p>非空提示保留原始文本，纯空白提示不显示。Android 使用系统 Toast.LENGTH_SHORT，并自动获取应用 Context；后台线程调用由原生侧切回主线程。iOS 在前台活动窗口显示约两秒，连续调用替换旧提示，不阻挡触摸；没有活动窗口时只记录日志。</p>
 <p>返回 <code>void</code> 不表示提示已显示。提示样式、实际时长及连续提示行为由各平台实现决定，统一的是调用签名。包入口的 <code>toast</code> 会拒绝非字符串参数，不支持的平台或 Android 应用尚未初始化时抛出异常。</p>
+<h3>验证调用后的代码是否执行</h3>
+<p>demo-app 的“测试”tab → “Toast 执行连续性测试”提供专门的诊断页面，分别调用包入口的 <code>toast</code> 和当前 <code>common-helper.ts</code> 封装。页面及控制台记录调用前、调用返回、后续同步计数、微任务、调用前后安排的计时器和 3 秒回调；全部执行后输出 <code>TOAST_FLOW_CHECK:PASS</code>。出现异常时页面显示失败，日志记录堆栈。</p>
+<p>已在 iPhone 17 Pro / iOS 26.5 与 Pixel 9 Pro XL / Android 15（API 35）前台主线程验证通过，当前版本未复现“Toast 显示后后续代码不执行”。这些结果不涵盖历史版本或后台线程调用；具体复现时可利用阶段标记确定停止位置。</p>
 <h2>剪贴板</h2>
 <p>Android 和 iOS 使用相同的 TS 签名：</p>
 <pre><code class="language-ts">import { copyToClipboard, getFromClipboard } from '@ajax-js/nativescript-common';

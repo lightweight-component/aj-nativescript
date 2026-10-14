@@ -1,0 +1,5 @@
+{
+  "uses": [
+    "com.ajaxjs.nativescript.android*:*"
+  ]
+}

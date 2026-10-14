@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="utf-8"/>
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
+        <title>AJ NativeScript-NativeScript 列表行与按钮事件处理</title>
+        <meta name="description" content="ListView itemTap 与内部 Button tap 的独立处理、Android 焦点修正及两端模拟器验证"/>
+        <meta name="keywords" content="NativeScript, NativeScript,Vue,事件"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1"/>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@200..900&family=Noto+Serif:ital,wght@0,100..900;1,100..900&display=swap&family=Noto+Sans+SC:wght@100..900&display=swap" />
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@100..900&family=Noto+Serif:ital,wght@0,100..900;1,100..900&display=swap" />
+        <link rel="stylesheet" href="https://framework.ajaxjs.com/static/new-ui/css/common.css" />
+        <script defer src="https://cdn.jsdelivr.net/npm/@highlightjs/cdn-assets@11.12.0/highlight.min.js"></script>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@highlightjs/cdn-assets@11.12.0/styles/github.min.css" />
+        <link rel="stylesheet" href="https://aj-util.ajaxjs.com/asset/main.css" />
+        <script src="https://aj-util.ajaxjs.com/asset/js/common.js"></script>
+        <script>
+            AJUtils.initTheme();
+            AJUtils.onReady(function () {
+                var button = document.querySelector('[data-document-language-toggle]');
+                var path = window.location.pathname;
+                AJUtils.bindThemeToggle();
+            });
+        </script>
+        <link rel="icon" type="image/png" href="https://nativescript.org/favicon-32x32.png" />
+
+        <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?734ea877e4a740968e40994221d9c877";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+        </script>
+    </head>
+    <body>
+        <nav>
+            <div>
+                <div class="links">
+                    <a href="/">🏠 首页</a>
+                    | ⚙️ 源码:
+                    <a target="_blank" href="https://github.com/lightweight-component/aj-nativescript">Github</a>/<a target="_blank" href="https://gitcode.com/lightweight-component/aj-nativescript">Gitcode</a>
+                    |
+                    <button class="theme-toggle" type="button" data-theme-toggle aria-label="切换主题" title="切换主题">☾</button>
+                </div>
+                <h1>AJ NativeScript</h1>
+                <h3>跨平台 App 开发</h3>
+            </div>
+        </nav>
+        <div class="docs-layout">
+            <menu class="docs-navigation" aria-label="文档导航">
+                <ul>
+                    <li class="selected">
+                        <a href="/docs">简介</a>
+                    </li>
+                </ul>
+
+                <h3>封装的功能</h3>
+                <ul>
+                 <li>
+                      <a href="/keystore-aes">KeyStore 与 AES</a>
+                  </li>
+                  <li>
+                      <a href="/ios">iOS 工具类</a>
+                  </li>
+                  <li>
+                      <a href="/common-helper">通用工具</a>
+                  </li>
+                  <li>
+                      <a href="/android">安卓工具类</a>
+                  </li>
+                 <li>
+                      <a href="/android-native">安卓原生工具</a>
+                  </li>
+                </ul>
+                <h3>MQTT 封装</h3>
+                <ul>
+                    <li><a href="/mqttv3">MQTTv3</a></li>
+                    <li><a href="/mqttv5">MQTTv5</a></li>
+                </ul>
+                <h3>NativeScript 使用经验</h3>
+                <ul>
+                    <li><a href="/exp/event-bubbling">事件上报</a></li>
+                </ul>
+                <h3>其他</h3>
+                <ul>
+                    <li><a href="/contact">联系</a></li>
+                </ul>
+
+            </menu>
+            <article class="aj-text chinese">
+                <h1>NativeScript 列表行与按钮事件处理</h1>
+<p>列表中经常需要两种操作：点击 item 查看详情，点击 item 内的按钮执行另一项操作。目标是点击正文或行空白处只执行行操作，点击按钮只执行按钮操作。</p>
+<p>在本项目的 NativeScript Vue demo 中，已验证可使用 <strong>ListView 的 <code>itemTap</code> + 内部原生 Button 的 <code>tap</code> + Android 按钮焦点修正</strong>，无需给正文单独划分业务点击区域。</p>
+<h2>先区分三种事件问题</h2>
+<p>NativeScript 使用原生控件和手势识别机制，不能把所有点击冲突都视为浏览器 DOM 事件冒泡。</p>
+<table>
+<thead>
+<tr>
+<th>场景</th>
+<th>含义</th>
+<th>本次结论</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>父容器 <code>tap</code> + 子控件 <code>tap</code></td>
+<td>父子视图同时处理点击，可能发生重复识别或手势竞争</td>
+<td>两端实测不一致，尚未得到通用拦截方案</td>
+</tr>
+<tr>
+<td>ListView <code>itemTap</code> + 行内 Button <code>tap</code></td>
+<td>原生列表处理行点击，原生按钮处理按钮点击</td>
+<td>Android 修正按钮焦点后，两端均符合预期</td>
+</tr>
+<tr>
+<td>子组件 <code>emit()</code> + 父组件监听</td>
+<td>Vue 自定义组件事件的传递</td>
+<td>与原生触摸传播属于不同机制</td>
+</tr>
+</tbody>
+</table>
+<p>ListView 的 <code>itemTap</code> 不是 item 根布局的 <code>tap</code>。本次触摸事件对象未提供 DOM 风格的 <code>stopPropagation()</code>，不能直接照搬网页中的 <code>@tap.stop</code> 或 <code>event.stopPropagation()</code>。</p>
+<h2>推荐写法：原生行点击与按钮点击各自处理</h2>
+<p>ListView 监听 <code>itemTap</code>，item 内部使用真正的 NativeScript <code>Button</code> 并监听其 <code>tap</code>。外层 item 容器及正文只负责布局，不绑定业务 <code>tap</code>。Android 在按钮的 <code>loaded</code> 中关闭焦点能力，iOS 保持默认行为。</p>
+<p>下面是完整的 NativeScript Vue 3 页面示例：</p>
+<pre><code class="language-vue">&lt;template&gt;
+  &lt;Page&gt;
+    &lt;ActionBar title=&quot;列表事件示例&quot; /&gt;
+    &lt;ListView :items=&quot;items&quot; rowHeight=&quot;76&quot; @itemTap=&quot;onItemTap&quot;&gt;
+      &lt;template #default=&quot;{ item }&quot;&gt;
+        &lt;!--
+          整行点击由 ListView 处理，外层与正文均不绑定 tap。
+        --&gt;
+        &lt;GridLayout columns=&quot;*,110&quot; height=&quot;76&quot;&gt;
+          &lt;StackLayout padding=&quot;12&quot; verticalAlignment=&quot;middle&quot;&gt;
+            &lt;Label :text=&quot;item.title&quot; fontWeight=&quot;bold&quot; /&gt;
+            &lt;Label text=&quot;点击查看详情&quot; fontSize=&quot;12&quot; /&gt;
+          &lt;/StackLayout&gt;
+          &lt;Button
+            col=&quot;1&quot;
+            text=&quot;操作&quot;
+            margin=&quot;6&quot;
+            @loaded=&quot;onButtonLoaded&quot;
+            @tap=&quot;onButtonTap(item)&quot;
+          /&gt;
+        &lt;/GridLayout&gt;
+      &lt;/template&gt;
+    &lt;/ListView&gt;
+  &lt;/Page&gt;
+&lt;/template&gt;
+
+&lt;script setup lang=&quot;ts&quot;&gt;
+import { isAndroid } from '@nativescript/core';
+import type { Button, EventData, ItemEventData } from '@nativescript/core';
+
+type RowItem = { id: number; title: string };
+
+const items: RowItem[] = [
+  { id: 1, title: '机器人 A' },
+  { id: 2, title: '机器人 B' }
+];
+
+/**
+ * 关闭 Android 行内按钮的键盘焦点，保留原生按钮点击。
+ */
+function onButtonLoaded(event: EventData): void {
+  if (!isAndroid)
+    return;
+
+  const button = event.object as Button;
+  button.android.setFocusableInTouchMode(false);
+  button.android.setFocusable(false);
+}
+
+/**
+ * 根据原生列表事件的索引取得当前项目，执行行操作。
+ */
+function onItemTap(event: ItemEventData): void {
+  const item = items[event.index];
+  if (!item)
+    return;
+
+  console.log('行点击', item.id);
+}
+
+/**
+ * 按钮只执行自己的操作，不手工转发行事件。
+ */
+function onButtonTap(item: RowItem): void {
+  console.log('按钮点击', item.id);
+}
+&lt;/script&gt;
+</code></pre>
+<p>这不是“分区 tap”：正文没有单独监听 <code>tap</code>，整行操作来自原生 ListView；按钮外的行空白处也可以触发行操作。按钮仍然位于 item 内部，自己的原生点击不会在本次已验证的结构中额外触发行操作。</p>
+<p>不要同时给 item 根布局增加业务 <code>tap</code>，否则会重新引入另一组父层手势。也不要用 <code>isEnabled=&quot;false&quot;</code>、<code>isUserInteractionEnabled=&quot;false&quot;</code> 或关闭按钮的 clickable 来替代焦点修正，这些设置会影响按钮交互。</p>
+<h2>Android 为什么需要修正焦点</h2>
+<p>NativeScript Android ListView 通过原生 <code>android.widget.AdapterView.OnItemClickListener</code> 发出 <code>itemTap</code>。Android 15 的 <a href="https://github.com/aosp-mirror/platform_frameworks_base/blob/android15-release/core/java/android/widget/AbsListView.java#L3910">AbsListView.onTouchUp 源码</a> 会检查整行 <code>child.hasExplicitFocusable()</code>；行内存在显式可获取焦点的子控件时，会跳过行点击处理。</p>
+<p>本次行内 Button 默认可获取焦点，导致点击正文也没有触发 <code>itemTap</code>。将按钮的 focusable 设为 false 后，原生列表恢复行点击，按钮的 clickable 仍为 true，按钮自己的点击继续正常执行。</p>
+<p>对照日志如下：</p>
+<pre><code class="language-text">未修正：before=true:after=true:clickable=true
+已修正：before=true:after=false:clickable=true
+</code></pre>
+<p>焦点修正放在 <code>loaded</code> 中，在按钮原生视图已创建、加载时执行，而不是在每次按钮点击时临时调整。虚拟列表滚动及复用后的项目也需要验证；本次已检查项目 11，按钮及行事件对应的项目编号正确。</p>
+<p>这个问题也被记录在社区 <a href="https://github.com/PeterStaev/nativescript-folding-list-view#having-buttons-inside-the-cells-android">Folding List View 的行内按钮说明</a> 中。它与父子布局都绑定 <code>tap</code> 后的手势竞争是两个问题，焦点修正不是通用的停止事件传播接口。</p>
+<h2>分区 tap 的适用范围</h2>
+<p>分区方案是：外层 item 只布局，正文区域监听 <code>tap</code>，按钮作为正文的兄弟节点监听自己的 <code>tap</code>。两端测试中也能得到独立点击效果。</p>
+<p>这种布局避免了父子业务点击重叠，但没有解决嵌套手势的拦截机制。对于本篇的 ListView 场景，优先使用上面的原生 <code>itemTap</code> 方案；不使用 ListView、或愿意明确划分点击区域时，分区方案仍是可选实现。</p>
+<h2>模拟器验证结果</h2>
+<p>验证日期：2026-10-14。demo 依赖范围为 <code>@nativescript/core ~9.1.3</code>、<code>nativescript-vue ~3.1.2</code>，Android Runtime <code>~9.1.1</code>、iOS Runtime <code>~9.1.0</code>，使用现有 NativeScript Vue + Vite 工程。</p>
+<table>
+<thead>
+<tr>
+<th>写法</th>
+<th>Android 15 / Pixel 9 Pro XL（API 35）</th>
+<th>iOS 26.5 / iPhone 17 Pro</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>父层布局 <code>tap</code> + 内部 Button <code>tap</code></td>
+<td>点击按钮同时执行行和按钮操作</td>
+<td>点击按钮执行行操作，按钮回调没有执行</td>
+</tr>
+<tr>
+<td>未修正的 ListView <code>itemTap</code> + Button <code>tap</code></td>
+<td>按钮正常，正文没有触发 itemTap</td>
+<td>行和按钮各自正常</td>
+</tr>
+<tr>
+<td>焦点修正后的 ListView <code>itemTap</code> + Button <code>tap</code></td>
+<td>行和按钮各自正常</td>
+<td>行和按钮各自正常</td>
+</tr>
+<tr>
+<td>分区 tap</td>
+<td>行和按钮各自正常</td>
+<td>行和按钮各自正常</td>
+</tr>
+</tbody>
+</table>
+<p>焦点修正模式下，两端逐次点击的预期增量均得到验证：</p>
+<table>
+<thead>
+<tr>
+<th>操作</th>
+<th>行业务计数</th>
+<th>按钮业务计数</th>
+<th>原生 itemTap 计数</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>点击按钮</td>
+<td>+0</td>
+<td>+1</td>
+<td>+0</td>
+</tr>
+<tr>
+<td>点击正文或按钮外的行空白处</td>
+<td>+1</td>
+<td>+0</td>
+<td>+1</td>
+</tr>
+</tbody>
+</table>
+<p>项目 1、2 及滚动后的项目 11 分别验证了按钮与行操作。Vue 类型检查、Android 完整构建及安装、iOS 完整 Xcode 模拟器构建及安装均通过。验证使用实际界面点击，没有使用 <code>notify()</code> 或直接调用业务回调代替点击。</p>
+<p>复测入口为 demo-app 底部“测试”tab → “列表与按钮事件测试” → “itemTap 焦点修正”。页面提供四种模式、独立计数及最近 30 条日志；切换模式重建列表并清空计数。控制台使用 <code>LIST_TAP_CHECK:native-fixed</code> 记录事件，Android 另用 <code>LIST_TAP_FOCUS</code> 记录焦点配置。</p>
+<p>验证边界：</p>
+<ul>
+<li>结论适用于本次版本、布局和原生 Button，不能直接推广到 Label、图片或布局模拟的按钮。</li>
+<li>关闭 Android focusable 会影响键盘 / D-pad 对按钮的焦点导航；尚未测试键盘、TalkBack、VoiceOver 或真机。</li>
+<li>行内还有输入框等其他可获取焦点的控件时，应重新评估，不能直接对全部控件统一关闭焦点。</li>
+<li>Android 拖动滚动没有增加计数。iOS 一次界面工具拖拽额外触发了项目 3 的 itemTap，原因尚未确定；使用列表 Scroll Up / Scroll Down 滚动动作复测没有增加计数，随后复用行的点击通过。不能宣称所有拖拽手势均已验证通过。</li>
+<li>父子容器都绑定 <code>tap</code> 的通用拦截问题仍未解决。</li>
+</ul>
+<h2>社区资料应该怎样理解</h2>
+<h3>父子布局的手势冲突</h3>
+<p><a href="https://github.com/NativeScript/NativeScript/issues/5685">#5685：IOS - event bubbling</a> 讨论了父子布局监听事件时的 iOS 差异。示例中的“按钮”实际上使用 StackLayout 模拟；讨论包含改用 touch 和调整事件注册位置的尝试。该 issue 已关闭，但不能据此断定当前所有嵌套 tap 已获得通用修复。</p>
+<p><a href="https://github.com/NativeScript/NativeScript/issues/7310">#7310：手势取消、拦截与定制</a> 提出的卡片与内部头像分别点击，接近“父子布局都监听 tap”的需求。它说明社区已讨论过手势控制能力，也不能用其状态代替当前版本的实测。</p>
+<h3>覆盖层挡住点击</h3>
+<p><a href="https://github.com/NativeScript/NativeScript/issues/5659#issuecomment-380734823">#5659：IOS event bubbling issue</a> 的浮动菜单容器占满屏幕，挡住了下层控件。作者通过调整容器尺寸和对齐方式解决。这里应检查视图实际占据的区域，而不是直接套用列表焦点修正。</p>
+<h3>原生 Button 与触摸穿透</h3>
+<p><a href="https://medium.com/@NativeNick/nativescript-event-bubbling-a-short-story-of-propagating-tap-f0c1ccec2752">NativeScript Event Bubbling</a> 发表于 2019 年，区分了布局手势与原生 Button 的点击，并介绍 <code>isPassThroughParentEnabled</code>。文章描述原生 Button 点击不会传给父布局，但与本项目当前父层 tap 模式的实测不完全一致，应结合版本和具体结构验证。</p>
+<p>当前 NativeScript 的 LayoutBase 仍提供 <code>isPassThroughParentEnabled</code>。其作用是让交互子控件未处理的触摸穿过当前布局，并不等于在按钮回调中取消父层业务 tap。<code>isUserInteractionEnabled=false</code> 会禁用相应视图交互，也不符合“按钮仍可点击”的目标。</p>
+<h3>Vue 自定义组件事件</h3>
+<p><a href="https://github.com/nativescript-vue/nativescript-vue/issues/1104">NativeScript Vue #1104</a> 讨论动态 <code>createNativeView()</code> 创建组件后，<code>emit('change')</code> 未送达外部监听。按钮回调已经执行，问题发生在组件事件传递阶段，与列表 itemTap、原生触摸传播和 Android 焦点过滤不同。</p>
+
+            </article>
+        </div>
+        <footer>
+             AJ NativeScript 开源框架 <a href="https://framework.ajaxjs.com" target="_blank">AJ-Framework</a> 的一部分。联系方式：
+             frank@ajaxjs.com，<a href="https://blog.csdn.net/zhangxin09" target="_blank">作者博客</a>
+             <br />
+             <br />
+             Copyright © 2026 Frank Cheung. All rights reserved.
+         </footer>
+    </body>
+</html>

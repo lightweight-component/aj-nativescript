@@ -81,6 +81,10 @@
                     <li><a href="/mqttv3">MQTTv3</a></li>
                     <li><a href="/mqttv5">MQTTv5</a></li>
                 </ul>
+                <h3>NativeScript 使用经验</h3>
+                <ul>
+                    <li><a href="/exp/event-bubbling">事件上报</a></li>
+                </ul>
                 <h3>其他</h3>
                 <ul>
                     <li><a href="/contact">联系</a></li>
@@ -350,6 +354,11 @@ keyId 限定为 1–96 个字母、数字、点、下划线或连字符；密钥
 AES 实现使用 <a href="https://developer.apple.com/documentation/cryptokit/aes/gcm">Apple CryptoKit AES.GCM</a>。</p>
 <p>已验证（2026-10-10）：TS/桥接测试 6 项、Android JVM 测试 8 项、真机/模拟器 XCFramework 构建、
 完整 npm pack、demo Vue 类型检查、iOS 模拟器编译运行，以及生产 Android Cipher 与 CryptoKit 的 AES-128/192/256 双向互通。</p>
+<h2>Android 原生桥接与 API 白名单</h2>
+<p>如果出现 <code>Cannot read properties of undefined (reading 'android')</code>，应先检查原生桥接，不是直接判定为 AES 密钥或 AAD 错误。APK 包含 JAR 类不代表 NativeScript 已生成它们的桥接元数据。</p>
+<p>启用了 <code>App_Resources/Android/native-api-usage.json</code> 的宿主，应保留现有配置，并在 <code>whitelist</code> 中加入 <code>com.ajaxjs.nativescript.android*:*</code>。旧工具包 <code>com.ajaxjs.android*:*</code> 与 common 插件的新包名不同，不能互相替代。</p>
+<p>common 插件也提供 <code>platforms/android/native-api-usage.json</code>，通过 <code>uses</code> 声明其原生包；宿主设置 <code>whitelist-plugins-usages: true</code> 时可自动合并。修改白名单后重新构建并安装 Android App，仅刷新 JS 不会更新桥接元数据。原生桥接缺失时，统一 AES 接口会抛出明确的桥接配置错误。</p>
+<p>Keystore 的查询、导入及加解密接口均为同步调用。使用固定本地密钥时，初始化应同步执行并放在同一个 try/catch 内；若将来通过网络取得密钥，应在处理 MQTT 消息前等待初始化完成，不能直接调用未等待的 async 初始化。</p>
 
             </article>
         </div>
