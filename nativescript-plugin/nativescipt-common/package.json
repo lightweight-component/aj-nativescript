@@ -28,7 +28,7 @@
   "scripts": {
     "build": "npm run clean && tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "npm run build && node --test scripts/keystore.test.mjs scripts/ios-bridge.test.mjs scripts/toast.test.mjs scripts/robot-key.test.mjs scripts/clipboard.test.mjs",
+    "test": "npm run build && node --test scripts/keystore.test.mjs scripts/ios-bridge.test.mjs scripts/toast.test.mjs scripts/robot-key.test.mjs scripts/clipboard.test.mjs scripts/confirm.test.mjs scripts/secure-storage.test.mjs",
     "dev": "tsc -p tsconfig.json --watch",
     "build:native": "node scripts/build-native.mjs",
     "prepack": "npm run build:native && node scripts/prepare-ios.mjs && npm run build",

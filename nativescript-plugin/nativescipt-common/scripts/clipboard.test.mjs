@@ -15,7 +15,7 @@ globalThis.AjaxJSIOSHelper = {
 globalThis.__clipboardContext = context;
 registerHooks({ resolve(specifier, context, next) {
     if (specifier === '@nativescript/core')
-        return { url: 'data:text/javascript,export let isAndroid=true;export let isIOS=false;export const Application={};export const Utils={android:{getApplicationContext:()=>globalThis.__clipboardContext}};export function platform(a,i){isAndroid=a;isIOS=i;}', shortCircuit: true };
+        return { url: 'data:text/javascript,export let isAndroid=true;export let isIOS=false;export class Color{};export const Application={};export const Utils={android:{getApplicationContext:()=>globalThis.__clipboardContext}};export function platform(a,i){isAndroid=a;isIOS=i;}', shortCircuit: true };
     return next(specifier, context);
 } });
 const core = await import('@nativescript/core');

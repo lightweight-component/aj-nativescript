@@ -15,6 +15,8 @@ layout: docs.njk
 
 ## 安装与调用入口
 
+独立的 `Sources/com/ajaxjs/nativescript/ios/ConfirmDialog.swift` 还提供自定义原生确认框。推荐通过统一 `confirm(options)` 调用，配色、按钮文案、长正文滚动、正文对齐与蒙层控制见 [通用工具](/common-helper#原生-confirm)。原生 ObjC 类为 `AjaxJSConfirmDialog`，NativeScript 方法名 `showCompletion(optionsJson, callback)`；JSON 颜色须为 `#AARRGGBB`，callback 接收 `(confirmed, error)`，无活动窗口返回 false，显示/参数失败返回非空 error，完成最多一次。原生在主线程从活动场景最上层控制器展示，不使用 UIAlertController 私有属性。
+
 ```sh
 npm install @ajax-js/nativescript-common
 ```
@@ -191,3 +193,10 @@ npm run build
 构建脚本使用独立 Xcode Framework 工程，生成真机 arm64 和模拟器 arm64/x86_64 的 XCFramework，并复制到插件 `platforms/ios`。使用当前工程的 Xcode 27 和 iOS 15 部署目标；更新后需要重新构建宿主 App，确保加载最新原生接口。
 
 demo-app 的“测试”tab 提供“Toast 测试”按钮，保留底部 tabs。已在 iPhone 17 Pro / iOS 26.5 模拟器验证 Toast 显示、自动消失及宿主版本读取；App Store 跳转和实际界面旋转尚未执行验证。
+
+
+## Token 与 MQTT 凭据安全存储
+
+推荐使用统一的 `setSecureItem/getSecureItem/removeSecureItem`，详见 [通用工具：安全存储](/common-helper#字符串安全存储)。原生源码 `Sources/com/ajaxjs/nativescript/ios/SecureStorage.swift`，ObjC 类 `AjaxJSSecureStorage`，NativeScript 方法为 `setItemValue(key, value)`、`getItem(key)`、`removeItem(key)`。返回 CryptoResult，须先检查 error：写入/删除成功 value=true；读取不存在 value=null，已保存空字符串仍返回空字符串。
+
+凭据使用独立 Keychain service，与 AES 密钥隔离；WhenUnlockedThisDeviceOnly、不同步，锁屏可能不可访问，卸载重装后可能仍保留。键名非空白且最多 128 UTF-16 单元，值最多 65536 UTF-8 字节；业务需要在退出登录时显式删除。

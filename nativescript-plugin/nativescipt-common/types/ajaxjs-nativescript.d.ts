@@ -4,6 +4,37 @@
  * Resolve platform types outside com.ajaxjs.nativescript.android to avoid name shadowing.
  */
 type AjaxjsAndroidContext = android.content.Context;
+type AjaxjsAndroidActivity = android.app.Activity;
+
+/**
+ * 原生确认框桥接；JSON 的颜色字段为 #AARRGGBB，优先使用统一 confirm(options)。
+ */
+declare namespace com.ajaxjs.nativescript.android.utils {
+    class ConfirmDialog extends java.lang.Object {
+        /**
+         * 主线程显示；确认 true，其余正常关闭 false。显示或参数错误触发 onError。
+         * 无 Activity 返回 false，回调最多一次；调用方须避免同时显示多个原生弹窗。
+         */
+        static show(activity: AjaxjsAndroidActivity | null, optionsJson: string, callback: ConfirmDialog.Callback): void;
+    }
+    namespace ConfirmDialog {
+        /**
+         * Java 回调接口代理，onResult 与 onError 只会调用其中一个一次。
+         */
+        class Callback extends java.lang.Object {
+            constructor(implementation: { onResult(confirmed: boolean): void; onError(message: string): void });
+            onResult(confirmed: boolean): void;
+            onError(message: string): void;
+        }
+    }
+}
+
+/**
+ * iOS 确认框；completion 主线程单次调用，无活动窗口 false，错误返回非空 error。
+ */
+declare class AjaxJSConfirmDialog extends NSObject {
+    static showCompletion(optionsJson: string, completion: (confirmed: boolean, error: string | null) => void): void;
+}
 
 /**
  * Android-only APIs; the aj-nativescript JAR must be installed in the host app.
@@ -436,4 +467,45 @@ declare class AjaxJSRobotKey extends NSObject {
      * Invalid input, duplicate alias, derivation or Keychain failure returns error.
      */
     static deriveAndImportKeyMasterKeyBase64RobotMac(alias: string, masterKeyBase64: string, robotMac: string): AjaxJSCryptoResult;
+}
+
+/**
+ * Android 小型凭据存储，独立 Keystore 密钥及 noBackupFilesDir，进程内串行。
+ * key 非空白且最多 128 UTF-16 单元，value 最多 65536 UTF-8 字节，均为合法 Unicode。
+ * 参数或存储/认证失败抛出异常；异常不包含凭据。
+ */
+declare namespace com.ajaxjs.nativescript.android.storage {
+    class SecureStorage extends java.lang.Object {
+        /**
+         * 写入或覆盖，空字符串有效；正常返回表示已提交。
+         */
+        static setItem(context: AjaxjsAndroidContext, key: string, value: string): void;
+        /**
+         * 返回原始字符串，不存在为 null；密钥失效或损坏抛出异常。
+         */
+        static getItem(context: AjaxjsAndroidContext, key: string): string | null;
+        /**
+         * 幂等删除单项；不删除共享存储密钥或其他数据。
+         */
+        static removeItem(context: AjaxjsAndroidContext, key: string): void;
+    }
+}
+
+/**
+ * iOS 独立 Keychain service；解锁可读，仅限本机，不同步。
+ * 必须先检查 error；写入/删除成功 value=true，读取不存在 value=null。
+ */
+declare class AjaxJSSecureStorage extends NSObject {
+    /**
+     * key 非空白且最多 128 UTF-16 单元；value 最多 65536 UTF-8 字节，可覆盖为空字符串。
+     */
+    static setItemValue(key: string, value: string): AjaxJSCryptoResult;
+    /**
+     * 不存在返回 value=null；锁定、系统或编码错误设置 error。
+     */
+    static getItem(key: string): AjaxJSCryptoResult;
+    /**
+     * 幂等删除，错误设置 error。
+     */
+    static removeItem(key: string): AjaxJSCryptoResult;
 }

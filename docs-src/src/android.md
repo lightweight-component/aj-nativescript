@@ -47,6 +47,12 @@ Android 的 `com` 是原生全局命名空间，不需要从插件导入；插�
 
 上述路径按宿主声明文件的位置调整。三斜线引用是 TypeScript 指令，不是普通注释。
 
+## ConfirmDialog：原生确认框
+
+`com.ajaxjs.nativescript.android.utils.ConfirmDialog` 使用 Java 原生布局，随 JAR 发布。推荐通过跨平台 `confirm(options)` 调用，参数、默认值和 Promise 行为见 [通用工具](/common-helper#原生-confirm)。
+
+直接原生入口为 `ConfirmDialog.show(activity, optionsJson, callback)`：所有界面及回调在主线程执行，`callback.onResult(true/false)` 表示确认/正常关闭，`callback.onError(message)` 表示参数或显示错误，最多完成一次。宿主 Activity 停止或销毁时自动取消并解除生命周期监听；蒙层关闭由 maskClosable 控制，返回键始终允许取消。JSON 使用与 TS 相同的字段，颜色须为 `#AARRGGBB`。直接调用方需持有前台 Activity，避免同时展示多个弹窗。
+
 ## Helper：提示、剪贴板和应用状态
 
 原生类：`com.ajaxjs.nativescript.android.utils.Helper`。日志标签为 `AJ_HELPER`。
@@ -179,3 +185,10 @@ Android 11 及以上的包可见性会影响 `isPackageInstalled`。宿主可按
 源码位于 `android/nativescipt-common/aj-nativescript/src/main/java/com/ajaxjs/nativescript/android/utils/Helper.java` 和同目录 `MarketRedirect.java`；原生方法声明位于插件 `types/ajaxjs-nativescript.d.ts`。
 
 JAR 构建、复制与 SDK 配置见 [安卓原生工具：原生工程与构建](../android-native/)。本文按当前源码整理接口，不表示所有厂商市场、权限场景均已完成实机验证。
+
+
+## 字符串安全存储
+
+推荐使用包入口的 `setSecureItem/getSecureItem/removeSecureItem`，用于 Token 与 MQTT 凭据，详见 [通用工具：安全存储](/common-helper#字符串安全存储)。原生类 `com.ajaxjs.nativescript.android.storage.SecureStorage` 提供 `setItem(context, key, value)`、`getItem(context, key)`、`removeItem(context, key)`，获取不到返回 null，失败抛出异常。键名非空白、最多 128 UTF-16 单元；值最多 65536 UTF-8 字节，空字符串有效，TS 接口保证合法 Unicode。
+
+本机 AES-256 密钥由 AndroidKeyStore 随机生成，不可导出，不复用机器人密钥。AES-GCM 密文通过 AtomicFile 保存于 noBackupFilesDir，AAD 绑定逻辑键名，避免备份恢复或换名误读。密钥丢失和认证失败不会静默回退；支持单进程调用，当前原生方法为同步小型 I/O。

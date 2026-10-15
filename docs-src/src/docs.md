@@ -21,7 +21,7 @@ common 的原生 AES 能力支持 Android 8.0（API 26）及以上、iOS 15 及�
 
 | npm 插件 | 主要能力 | 平台 / 状态 |
 | --- | --- | --- |
-| `@ajax-js/nativescript-common` | 公共工具、Android Keystore / iOS Keychain、AES-GCM JSON 与 AAD 加解密、机器人 HKDF 设备密钥派生 | Android / iOS；已实现 |
+| `@ajax-js/nativescript-common` | 公共工具、Token/MQTT 凭据安全存储、Android Keystore / iOS Keychain、AES-GCM JSON 与 AAD 加解密、机器人 HKDF 设备密钥派生 | Android / iOS；已实现 |
 | `@ajax-js/nativescript-mqtt-v3` | 基于 Eclipse Paho 的 MQTT 3.1.1 通讯 | Android；已实现 |
 | `@ajax-js/nativescript-mqtt-v5` | 基于 Eclipse Paho 的 MQTT 5.0 通讯 | Android；已实现 |
 
@@ -35,7 +35,7 @@ common 的原生 AES 能力支持 Android 8.0（API 26）及以上、iOS 15 及�
 
 | 文档 | 内容与使用对象 |
 | --- | --- |
-| [通用工具](../common-helper/) | Android / iOS 一致的 TS API：Toast、剪贴板复制与读取 |
+| [通用工具](../common-helper/) | Android / iOS 一致的 TS API：Confirm、Toast、剪贴板与 Token/MQTT 凭据安全存储 |
 | [安卓工具类](../android/) | 面向业务 TS 调用的 Helper、MarketRedirect：网络、语言、主题、版本和应用市场跳转 |
 | [安卓原生工具](../android-native/) | 面向 Java 原生代码的 HttpRequest、Utils，以及 Android JAR 构建 |
 | [iOS 工具类](../ios/) | iOS Helper 的应用版本、App Store 跳转、界面方向与原生桥接 |
@@ -60,7 +60,7 @@ common 的原生 AES 能力支持 Android 8.0（API 26）及以上、iOS 15 及�
 
 先按所需组件的 README 安装插件并完成宿主配置，再通过 TS 接口调用。Android JAR 和 iOS XCFramework 的更新都需要重新构建宿主 App，刷新 JS 不能替换原生组件。
 
-`demo-app` 沿用 NativeScript + Vue + Vite 工程，底部“测试”tab 提供 Toast、剪贴板、AES 加解密及 MQTT v3 / v5 测试入口。模拟器或设备运行、依赖准备与完整构建步骤见 [demo-app README](https://github.com/lightweight-component/aj-nativescript/blob/main/demo-app/README.md)。
+`demo-app` 沿用 NativeScript + Vue + Vite 工程，底部“测试”tab 提供 Confirm、Toast、剪贴板、安全存储、AES 加解密及 MQTT v3 / v5 测试入口。模拟器或设备运行、依赖准备与完整构建步骤见 [demo-app README](https://github.com/lightweight-component/aj-nativescript/blob/main/demo-app/README.md)。
 
 Android 原生组件的构建入口见 [安卓原生工具](../android-native/)；iOS Framework 构建与桥接说明见 [iOS 工具类](../ios/)。npm 打包、版本升级与发布流程见 common 组件 README。
 

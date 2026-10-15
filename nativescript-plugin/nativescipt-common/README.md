@@ -38,6 +38,7 @@ npx ns build ios --emulator
 
 ## 功能文档与演示
 
+- [通用工具](../../docs-src/src/common-helper.md)：原生 Confirm（`Promise<boolean>`）、Toast、剪贴板及 Token/MQTT 凭据安全存储（`setSecureItem/getSecureItem/removeSecureItem`）统一接口。
 - [Keystore 与 AES-GCM](../../docs-src/src/keystore-aes.md)：直接导入及 HTTPS 领取密钥、HKDF-SHA256 机器人一机一密、JSON/AAD 加解密、兼容性及 ESP32 修改提示词。
 - [iOS Helper](../../docs-src/src/ios.md)：Toast、应用版本、App Store 跳转和界面方向工具。
 - [demo 文档](../../demo-app/README.md)：在现有 NativeScript App 的“测试”tab 验证组件。

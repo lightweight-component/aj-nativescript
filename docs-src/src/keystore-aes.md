@@ -155,32 +155,6 @@ MAC 是公开设备标识，秘密来自主密钥。若每个客户端都持有�
 完整向量（包含三种主密钥长度、前导零 MAC 和不同 MAC）见 [robot-key-v2.json](../../nativescript-plugin/nativescipt-common/test-vectors/robot-key-v2.json)，也随 npm 包的 `test-vectors` 目录发布。
 Android 使用 HmacSHA256 执行 HKDF，iOS 使用 CryptoKit HKDF；基于 [RFC 5869](https://www.rfc-editor.org/rfc/rfc5869.html)。
 
-### ESP32 工程修改提示词
-
-将以下内容交给 ESP32 开发端；它替换先前直接使用固定 AES 密钥的方案。
-
-> 请先检查当前 ESP32 工程的框架、MQTT、JSON、密码库和配置入口，沿用原工程实现，不新建工程。不要提交、推送或发布固件。
->
-> 目标：固定秘密主密钥 + 机器人 Wi-Fi STA MAC，通过完整 HKDF-SHA256（Extract + Expand）派生一机一密，再用派生出的 AES-256 密钥执行 MQTT JSON 的 AES-GCM + topic AAD 加解密。
->
-> 严格执行本节 v2 字节协议：IKM 为 Base64 解码后的原始 16/24/32 字节安全随机主密钥；salt 为 UTF-8 字符串 `ajaxjs/robot/key-derivation/v2`；info 仅为机器人 Wi-Fi STA MAC 的小写无分隔符 12 位十六进制文本的 UTF-8 字节；输出长度固定 32 字节。全部字符串长度不包含结尾 NUL，不能把 MAC 原始 6 字节当作 info，也不能把主密钥 Base64 文本直接当作 IKM。
->
-> 配置若接受 MAC 字符串，严格接受纯 12 位十六进制或六对十六进制字节用一致的冒号/连字符分隔，禁止空白、混用分隔符、非 ASCII 十六进制和非法长度，保留前导零。若从硬件读取，使用已约定的 Wi-Fi STA MAC（ESP-IDF 中检查当前版本读取 ESP_MAC_WIFI_STA 的接口），格式化为每字节两位小写十六进制，不使用 SoftAP、BLE 或随机地址。先报告实际使用的 MAC 来源。
->
-> Mbed TLS 可使用当前工程支持的 `mbedtls_hkdf`，选择 SHA-256，确认相关配置启用；不得只执行 Expand，也不能直接用 SHA256(master + MAC)、PBE 或 PBKDF2 替代。检查错误码和各参数的字节长度。
->
-> 发送：业务 JSON 序列化成 UTF-8，使用派生设备密钥和最终实际 MQTT topic 的 UTF-8 字节作为 AAD，每次生成新的安全随机 12 字节 nonce，输出 UTF-8 JSON `{ver:2,timestamp,nonce,data}`。timestamp 是 UTC Unix epoch 毫秒 JSON number，用 64 位整数，不能用开机时间代替；未同步时钟时明确报错或等待同步。nonce 为标准 Base64（16 字符）；data 为标准 Base64 的 `[ciphertext][16-byte GCM tag]`，不增加单独 tag 字段。topic 原样保留，不 trim、规范化或附加 NUL。保持原 topic、业务字段、QoS 和 retain 配置，避免重复加密。
->
-> 接收：按真实 topic/payload 长度读取并完整重组分片，解析外层四字段，验证 ver=2、timestamp 为有效非负安全整数、严格 Base64、12 字节 nonce、data 至少16字节。拆出末尾16字节 tag，使用实际 topic（不是含通配符的订阅过滤器）作为 AAD，以设备密钥执行带标签验证的解密。Mbed TLS 使用 `mbedtls_gcm_auth_decrypt`，认证成功后才解析明文 JSON 并调用业务处理器；任何失败不得触发机器人动作、泄漏未认证明文或回退至明文/主密钥解密。限制最大消息长度，正确处理缓冲区生命周期、内存分配失败和并发密码上下文。
->
-> 主密钥只用于 HKDF，不再直接用于 MQTT AES。本节对应消息 ver=2；此前已确定的 ver=1 协议保持原定义，不能用新派生规则重新解释旧报文。App 与固件需同时切换至 v2，收到非 ver=2 报文明确拒绝，不自动探测或回退。主密钥版本、密钥轮换和旧密钥消息处理需要业务明确配置。ver/timestamp 不包含在 topic AAD 中，因此没有被 GCM 认证，不能把 timestamp 单独视为安全防重放，也不得擅自拼入 AAD 改变协议。
->
-> 测试先逐条运行本节链接的公开向量，原始32字节主密钥 `00..1f` + MAC `aabbccddeeff` 必须输出十六进制 `ab46f491645c7e09d90c1372c999b1b88e12369d4f5aeb3e5c264e3ce6de9277`。验证三种主密钥长度、MAC 大小写/分隔符等价、前导零、不合法输入、不同 MAC/不同主密钥产生不同结果。仅测试使用公开密钥，不记录真实主密钥和设备密钥。
->
-> 再以派生密钥验证 App→ESP32、ESP32→App 的实际互通、中文/emoji JSON、相同 topic 成功、不同 topic 或去除空格认证失败、错误设备密钥拒绝、nonce/ciphertext/tag 篡改拒绝、每次加密产生不同 nonce、非空 AAD 不兼容旧无 AAD方法、空 AAD 与旧 GCM 方法兼容。正式业务必须使用实际 topic，旧 GCM 兼容测试也使用同一派生设备密钥，不代表兼容之前直接使用主密钥的报文。
->
-> 提供公开互通向量和测试结果：MAC、主密钥测试编码、派生结果、完整 topic、业务明文和完整加密外层 JSON。固定 nonce 只用于隔离测试向量，不能用于生产。报告代码改动、主密钥配置、MAC 来源、随机源、时钟同步、MQTT 缓冲区调整、编译和各项测试结果；没有真实 App/ESP32 联调时明确标注未完成，不能把本机往返测试当作双向互通通过。所有新增注释使用多行形式，if 条件后的执行语句另起一行。
-
 ## JWT 领取并导入密钥
 
 ```ts

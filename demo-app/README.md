@@ -255,3 +255,57 @@ Android 拖动滚动没有增加计数。iOS 一次界面工具拖拽额外产�
 独立从命令行启动的模拟器在 macOS 上运行于 qemu 进程，ADB 可正常安装、启动和读取日志，但本机界面工具无法按应用名称或可执行文件路径选中该独立窗口。
 
 本次通过 Android Studio 重新启动现有 Pixel 模拟器，并在 Running Devices 工具窗口显示设备，界面工具随后可选择 Android Studio 窗口完成点击与拖动。设置入口为 Settings → Tools → Emulator → Launch in the Running Devices tool window；本机该设置原本已启用，无需追加屏幕录制或辅助功能权限。建议后续由 Android Studio 的 Device Manager 启动模拟器，并保持 Running Devices 窗口可见。此方式不需要修改业务工程或清空模拟器数据。
+
+
+### 原生 Confirm 测试（2026-10-15）
+
+入口：“测试”tab → “原生 Confirm 测试”。组件使用 common 插件的 Java/Swift 实现，调用 `await confirm(options)`，确认返回 `true`，取消返回 `false`；参数或显示错误进入 `catch`。默认文案为中文，需要国际化时传入翻译后的标题与按钮文字。
+
+页面检查默认确认/取消、自定义按钮颜色与 Unicode 文案、蒙层关闭策略、长正文滚动、连续两个弹窗和无效颜色。`完成回调` 与 `await 后代码` 计数、`CONFIRM_CHECK` 日志用于确认后续代码执行及单次结算。并发请求依次显示，错误不会阻塞后续请求。`position` 保留原组件的正文对齐含义，不控制弹窗位置。
+
+| 模拟器 | 结果 |
+| --- | --- |
+| Pixel 9 Pro XL / Android 15 API 35 | 9 项真实界面检查通过；包括 Android 返回键取消、宿主进入后台后单次取消 |
+| iPhone 17 Pro / iOS 26.5 | 5 项 XCTest 通过；包括确认/取消、蒙层策略、样式与长正文、队列与错误恢复、后台取消 |
+
+common 插件的 19 项自动化测试通过，包含 Confirm 的平台桥接、参数验证、返回值、重复回调保护与队列错误恢复。已重新生成 Android JAR、设备/模拟器 XCFramework 与 TS 产物，demo 的双端构建及 Vue 类型检查通过。本轮未验证真机、屏幕旋转、键盘导航或读屏操作。
+
+iOS 首次构建遇到 Swift Package 下载等待，使用本机已有且与 Package.resolved 一致的依赖缓存完成构建，未更改依赖版本。
+
+复测前先构建 common 插件及 demo，并启动对应模拟器。在仓库根目录执行：
+
+```sh
+node demo-app/tests/confirm/run-android.mjs
+node demo-app/tests/confirm/run-ios.mjs
+```
+
+Android 脚本要求 SDK 35、构建工具、JDK、默认 debug.keystore 及唯一已连接的模拟器，安装已有 debug APK 后，通过独立 Instrumentation 驱动现有 demo。SDK 可通过 ANDROID_HOME 或 ANDROID_SDK_ROOT 指定。iOS 脚本要求 Xcode 与唯一已启动的模拟器，也可通过 IOS_SIMULATOR_UDID 指定，安装已有 demo.app 后运行 XCTest。测试项目和驱动产物均位于临时目录，测试对象始终是本项目的 NativeScript App。
+
+两个脚本输出临时产物路径；Android 保存自定义配色/长正文截图与结果日志，iOS 的 results.xcresult 保存结果和自定义配色截图附件。测试会重新安装并启动 demo，运行前请先保存模拟器内当前测试状态。
+
+统一参数与迁移说明见 [通用工具文档](../docs-src/src/common-helper.md)。
+
+
+### Token / MQTT 凭据安全存储（2026-10-15）
+
+入口：“测试”tab → “安全存储测试”。使用包入口的 `setSecureItem/getSecureItem/removeSecureItem`，仅操作 `demo.secure-self-check.*` 测试项和公开虚拟凭据，不显示真实 Token 或密码；保留底部 tabs。
+
+自检覆盖不存在返回 null、空字符串、Unicode/空格/换行/NUL 原样读回、覆盖、多项隔离、并发调用顺序、64 KiB UTF-8 边界与非法输入拒绝、ApplicationSettings 旧值写入成功后删除、幂等删除、机器人 AES 密钥隔离及 finally 清理。成功日志为 `SECURE_STORAGE_SELF_CHECK:PASS`。另先点“写入重启测试数据”，结束 App 进程再重新进入页面，点“验证重启后数据并清理”，应得到 `SECURE_STORAGE_RESTART:PASS:CLEANED`。
+
+| 模拟器 | 验证结果 |
+| --- | --- |
+| Pixel 9 Pro XL / Android 15 API 35 | 3 项界面流程通过：完整自检、持久化写入、强制结束进程后读取并清理。另 4 项原生检查通过：密文无明文/位于 no_backup/nonce 每次不同、tag 篡改拒绝、换项密文因 AAD 不同被拒绝、截断密文报错；均清理临时项。 |
+| iPhone 17 Pro / iOS 26.5 | 1 项完整 XCTest 流程通过：自检、写入、结束进程、重启后读回清理、再次自检。 |
+
+插件 24 项自动化测试通过，覆盖两端桥接与异常传播；JAR、设备/模拟器 XCFramework、TS 与双端 demo 构建、Vue 类型检查通过。iOS 使用与 Package.resolved 一致的已有 Swift Package 缓存完成构建，未改依赖版本；首轮关闭代码签名的模拟器构建出现 Keychain 访问失败，改用模拟器本地签名后实际读写通过。调试 Keychain 请使用正常签名的模拟器/真机构建。
+
+复测先构建 common 插件及 demo，启动模拟器，然后在仓库根目录执行：
+
+```sh
+node demo-app/tests/secure-storage/run-android.mjs
+node demo-app/tests/secure-storage/run-ios.mjs
+```
+
+环境要求与 Confirm 测试脚本相同。Android 安全检查使用 debug 签名匹配的 Instrumentation 在现有 demo UID 中运行，仅读写 `demo.native-secure-check.*` 项；不删除或替换共享 Keystore 密钥。脚本保存界面结果、安全检查日志与截图；iOS results.xcresult 保留 XCTest 结果和页面截图附件，临时目录在输出中列明。
+
+尚未验证真机、锁屏期间访问、系统备份/迁移、卸载重装、Keystore 密钥失效和多进程并发。不能据模拟器结果宣称这些场景通过。业务 App 的旧 Token 尚未自动迁移，实际旧键名、登录退出和后端刷新流程需在接入时按 [通用工具文档](../docs-src/src/common-helper.md) 配置。

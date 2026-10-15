@@ -18,6 +18,8 @@
           <StackLayout padding="24" spacing="16">
             <Label :text="text.testTitle" fontSize="24" fontWeight="bold" />
             <Label :text="text.testHint" class="muted" textWrap="true" />
+            <Button text="安全存储测试" @tap="openSecureStorage" />
+            <Button text="原生 Confirm 测试" @tap="openConfirm" />
             <Button text="列表与按钮事件测试" @tap="openListTap" />
             <Button text="Toast 测试" @tap="showToastDemo" />
             <Button text="Toast 执行连续性测试" @tap="openToastFlow" />
@@ -72,6 +74,8 @@ import AesDemo from './AesDemo.vue';
 import ClipboardDemo from './ClipboardDemo.vue';
 import ToastDemo from './ToastDemo.vue';
 import ListTapDemo from './ListTapDemo.vue';
+import SecureStorageDemo from './SecureStorageDemo.vue';
+import ConfirmDemo from './ConfirmDemo.vue';
 import MqttDemo from './MqttDemo.vue';
 import MqttV5Demo from './MqttV5Demo.vue';
 
@@ -86,6 +90,20 @@ function initializeTabs(args: EventData) {
     return;
   initialized = true;
   setTimeout(() => {
+    const secureStorageAutoCheck = ApplicationSettings.getBoolean('secureStorageAutoCheck', false)
+      || (isAndroid && Application.android.startActivity?.getIntent()?.getBooleanExtra('secureStorageAutoCheck', false));
+    if (secureStorageAutoCheck) {
+      (args.object as TabView).selectedIndex = 1;
+      openSecureStorage();
+      return;
+    }
+    const confirmAutoCheck = ApplicationSettings.getBoolean('confirmAutoCheck', false)
+      || (isAndroid && Application.android.startActivity?.getIntent()?.getBooleanExtra('confirmAutoCheck', false));
+    if (confirmAutoCheck) {
+      (args.object as TabView).selectedIndex = 1;
+      openConfirm();
+      return;
+    }
     const autoCheck = ApplicationSettings.getBoolean('aesAutoCheck', false);
     (args.object as TabView).selectedIndex = autoCheck ? 1 : 0;
     if (autoCheck)
@@ -125,6 +143,20 @@ function showToastDemo() {
  */
 function openListTap() {
   $navigateTo(ListTapDemo, { frame: 'tests-frame' });
+}
+
+/**
+ * 在测试 tab 内打开安全存储页面，保留底部导航。
+ */
+function openSecureStorage() {
+  $navigateTo(SecureStorageDemo, { frame: 'tests-frame' });
+}
+
+/**
+ * 在现有测试 tab 中打开原生确认框测试，保留底部导航。
+ */
+function openConfirm() {
+  $navigateTo(ConfirmDemo, { frame: 'tests-frame' });
 }
 
 /**
