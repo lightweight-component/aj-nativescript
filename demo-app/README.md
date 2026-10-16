@@ -309,3 +309,13 @@ node demo-app/tests/secure-storage/run-ios.mjs
 环境要求与 Confirm 测试脚本相同。Android 安全检查使用 debug 签名匹配的 Instrumentation 在现有 demo UID 中运行，仅读写 `demo.native-secure-check.*` 项；不删除或替换共享 Keystore 密钥。脚本保存界面结果、安全检查日志与截图；iOS results.xcresult 保留 XCTest 结果和页面截图附件，临时目录在输出中列明。
 
 尚未验证真机、锁屏期间访问、系统备份/迁移、卸载重装、Keystore 密钥失效和多进程并发。不能据模拟器结果宣称这些场景通过。业务 App 的旧 Token 尚未自动迁移，实际旧键名、登录退出和后端刷新流程需在接入时按 [通用工具文档](../docs-src/src/common-helper.md) 配置。
+
+### Android HMR 调试
+
+运行 `npm run android` 或 `ns debug android` 使用 HMR；`npm run android:no-hmr` 保留关闭 HMR 的回退方式。
+
+`scripts/android-hmr-activity.mjs` 为 Android HMR 生成固定名称的 Activity 桥接模块和可供静态绑定生成器扫描的实现。运行时仍使用同一份 HTTP core，避免旧 Java 绑定引用已删除的带哈希 JS 文件。
+
+`patches/@nativescript+vite+8.0.18.patch` 修复 Windows 文件系统 URL、工程外本地插件源码和省略扩展名的 TS 模块解析；`postinstall` 会自动应用。Vite 集成暂时固定为 8.0.18，升级时应检查补丁是否仍有必要。配置中的 `NS_WORKSPACE_ROOT` 指向本仓库根目录，支持 demo 引用同仓库插件。
+
+`npm run test:hmr` 验证桥接输出与路径解析。首次从旧构建切换时，需要重新构建和安装 Android APK，让 Java Activity 与新桥接文件对应；不要手动修改 platforms 中自动生成的 Java 文件。

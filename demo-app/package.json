@@ -6,7 +6,9 @@
   "scripts": {
     "ios": "ns debug ios",
     "android": "ns debug android",
-    "postinstall": "patch-package"
+    "postinstall": "patch-package",
+    "android:no-hmr": "ns debug android --no-hmr",
+    "test:hmr": "node --test scripts/android-hmr.test.mjs"
   },
   "dependencies": {
     "@ajax-js/nativescript-common": "file:../nativescript-plugin/nativescipt-common",
@@ -23,7 +25,7 @@
     "@nativescript/ios": "~9.1.0",
     "@nativescript/tailwind": "~4.1.0",
     "@nativescript/types": "~9.1.4",
-    "@nativescript/vite": "~8.0.18",
+    "@nativescript/vite": "8.0.18",
     "@types/node": "^22.14.0",
     "@vitejs/plugin-vue": "^6.0.9",
     "@vitejs/plugin-vue-jsx": "^5.1.6",

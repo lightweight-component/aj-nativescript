@@ -19,7 +19,7 @@ npm test
 npm pack
 ```
 macOS 打包同时自动构建独立 Xcode Framework，生成真机和模拟器 XCFramework 到 `platforms/ios`。
-Windows/Linux 仍可构建 Android 和打包，但必须先复制 macOS 构建的完整 `AjaxJSCommon.xcframework` 到该目录；缺失时阻止打包，避免发布缺少 iOS 的包。
+Windows/Linux 打包时，如果没有 `AjaxJSCommon.xcframework`，会自动跳过 iOS，正常打包 Android 和 TS。若需要 iOS 原生功能，先复制 macOS 构建的完整 XCFramework 到 `platforms/ios`；已有框架仍会检查完整性与接口，校验不通过时需在 Mac 上重新构建。
 单独构建 iOS：`npm run build:ios`。需要 Xcode 27，最低部署版本 iOS 15。
 
 打包会自动构建 `android/nativescipt-common/aj-nativescript`，将运行用的 JAR 放入 `platforms/android`。
@@ -62,7 +62,7 @@ npm pack
 ```
 
 `patch` 升级补丁版本，例如 `0.1.0 → 0.1.1`；`--no-git-tag-version` 不创建 Git 提交或标签。
-`npm pack` 自动构建并打包 Android JAR、iOS XCFramework、TS 产物和声明文件，生成对应版本的 `.tgz`。
+`npm pack` 自动构建 Android JAR、TS 产物和声明文件，生成对应版本的 `.tgz`。macOS 同时构建 iOS XCFramework；Windows/Linux 未放置 XCFramework 时跳过 iOS，已有框架校验通过后一起打包。未包含 XCFramework 的包不提供 iOS 原生功能。
 
 检查安装包后，发布该文件（文件名以实际生成的版本为准）：
 

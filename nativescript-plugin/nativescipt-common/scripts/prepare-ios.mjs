@@ -7,6 +7,8 @@ if (process.platform === 'darwin') {
         throw result.error;
     if (result.status !== 0)
         process.exit(result.status ?? 1);
+} else if (!existsSync(new URL('../platforms/ios/AjaxJSCommon.xcframework', import.meta.url))) {
+    console.log('Skipping iOS preparation: no XCFramework found. Packing Android and TypeScript artifacts only.');
 } else {
     const files = [
         'Info.plist',

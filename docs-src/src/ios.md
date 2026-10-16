@@ -57,39 +57,6 @@ if (isIOS) {
 | `requestOrientationChange()` | 无 | `void` | iOS 16 |
 | `forcePortrait()` | 无 | `void` | iOS 16 |
 
-## Toast 提示
-
-跨平台 `toast(message)` 以及剪贴板复制、读取的统一签名、示例和模拟器结果见 [通用工具](../common-helper/)。本文仅补充 iOS Helper 的专用调用与平台实现行为。
-
-### iOS 专用入口
-
-```ts
-import { com as commonNative } from '@ajax-js/nativescript-common';
-
-commonNative.ajaxjs.nativescript.ios.Helper.showToast('保存成功');
-```
-
-iOS Toast 的行为如下：
-
-- 在前台活动窗口显示，约两秒后自动消失。
-- 连续调用替换旧提示，并重新计算显示时间。
-- 空白消息不显示，也不打断已有提示；有效消息保留原始文本。
-- 不使用模态弹窗，不阻挡底下的触摸操作。
-- 默认位于底部安全区域上方，并通过约束避开键盘。
-- UI 操作异步进入主线程；方法不等待提示显示或关闭。
-
-如果没有可用的活动窗口，原生端只记录日志，不显示提示，也不向 TS 返回显示结果。建议在页面已经显示后调用。
-
-## iOS 剪贴板原生入口
-
-跨平台业务代码使用 [通用工具](../common-helper/)。如需显式通过 iOS Helper 调用：
-
-```ts
-iosHelper.copyToClipboard('原始文本');
-const text: string = iosHelper.getFromClipboard();
-```
-
-两者通过 UIPasteboard.general.string 同步操作主线程；无可读字符串时返回空字符串，不提供图片读取。后台调用同步切回主线程，调用方不能在主线程等待该后台调用。系统粘贴授权与文本保留规则集中说明在通用工具页。
 
 ## 应用版本信息
 

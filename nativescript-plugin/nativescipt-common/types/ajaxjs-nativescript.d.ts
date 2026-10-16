@@ -234,11 +234,28 @@ declare namespace com.ajaxjs.nativescript.android {
         }
 
         /**
-         * 时间和安全随机字符串工具。
+         * 时间、安全随机字符串和 Base64 文本编码工具。
          */
         class Utils extends java.lang.Object {
             static class: java.lang.Class<Utils>;
             constructor();
+            /**
+             * 将 UTF-8 文本编码为标准 Base64，不换行并保留所需填充；不提供加密保护。
+             *
+             * @param text 原始文本，不得为 null；允许空字符串。
+             * @returns Base64 字符串；空输入返回空字符串。
+             * @throws 输入为 null 时抛出 IllegalArgumentException。
+             */
+            static encodeBase64(text: string): string;
+            /**
+             * 将标准 Base64 解码为 UTF-8 文本，不去除空白，不接受 URL-safe 字符表。
+             * 允许省略末尾填充；二进制密钥不应通过此文本接口解码。
+             *
+             * @param encoded Base64 字符串，不得为 null；允许空字符串。
+             * @returns 解码后的文本；空输入返回空字符串。
+             * @throws 输入为 null、Base64 无效或不是有效 UTF-8 时抛出 IllegalArgumentException。
+             */
+            static decodeBase64(encoded: string): string;
             /**
              * 获取设备当前时区的本地时间。
              *

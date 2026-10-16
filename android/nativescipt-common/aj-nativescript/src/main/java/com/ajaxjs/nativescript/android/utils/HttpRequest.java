@@ -1,7 +1,7 @@
 package com.ajaxjs.nativescript.android.utils;
 
 import android.net.Network;
-import android.text.TextUtils;
+import android.os.Looper;
 import android.util.Log;
 
 import java.io.BufferedReader;
@@ -18,8 +18,7 @@ import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 
 /**
- * HTTP request helper class.
- * 在子线程中执行网络请求
+ * HTTP 文本请求工具；异步方法使用内部线程池，同步方法必须在调用方后台线程执行。
  */
 public class HttpRequest {
     /**
@@ -71,45 +70,7 @@ public class HttpRequest {
      */
     public static void get(String urlString, Consumer<String> callback, Network network,
                            Consumer<HttpURLConnection> headerConsumer, Consumer<String> onError) {
-        Log.d(Helper.TAG, "HTTP [" + urlString + "]start to request. isRequestNetwork: " + (network != null));
-
-        EXECUTOR.execute(() -> {
-            HttpURLConnection connection = null;
-            String responseBody = null;
-            String error = null;
-
-            try {
-                URL url = new URL(urlString);
-                connection = (HttpURLConnection) (network == null ? url.openConnection() : network.openConnection(url));
-                connection.setRequestMethod("GET");
-                connection.setConnectTimeout(5000); // 5 秒连接超时
-                connection.setReadTimeout(10000);   // 10 秒读取超时
-
-                if (headerConsumer != null)
-                    headerConsumer.accept(connection);
-
-                int responseCode = connection.getResponseCode();
-                Log.d(Helper.TAG, "HTTP [" + urlString + "]Response Code: " + responseCode);
-
-                if (responseCode >= 200 && responseCode < 300) {
-                    responseBody = readInputStream(connection.getInputStream());
-                    Log.v(Helper.TAG, "Response [" + urlString + "] successful, body content:\n" + responseBody); // 使用 VERBOSE 级别，因为内容可能很长
-
-                } else {
-                    responseBody = readInputStream(connection.getErrorStream());// 尝试读取错误流
-                    error = "HTTP " + responseCode + " [" + urlString + "] response body: " + responseBody;
-                    Log.e(Helper.TAG, error);
-                }
-            } catch (Exception e) {
-                error = "Network request [" + urlString + "] failed with exception: " + e.getMessage();
-                Log.e(Helper.TAG, error, e);
-            } finally {
-                if (connection != null)
-                    connection.disconnect();
-            }
-
-            dispatchResult(callback, onError, responseBody, error);
-        });
+        requestAsync("GET", urlString, null, callback, network, headerConsumer, onError);
     }
 
     /**
@@ -122,59 +83,181 @@ public class HttpRequest {
      * @param onError   HTTP 非 2xx 或请求异常回调，在后台线程执行
      */
     public static void post(String urlString, String body, Consumer<String> callback, Network network, Consumer<String> onError) {
+        post(urlString, body, callback, network, null, onError);
+    }
+
+    /**
+     * 使用指定网络发起可自定义请求头的 POST 请求。
+     * 有非空正文时默认 Content-Type 为 application/json，自定义请求头可覆盖该值。
+     * 请求头配置在后台线程、发送请求前执行；配置异常通过 onError 返回。
+     * 成功和错误回调均在后台线程、连接释放后执行。
+     *
+     * @param urlString      请求地址。
+     * @param body           UTF-8 请求正文，可为空；JSON 由调用方提前序列化。
+     * @param callback       HTTP 2xx 响应正文回调，可为空。
+     * @param network        指定网络；为 null 时使用系统默认网络。
+     * @param headerConsumer 请求头配置回调，可为空；仅配置连接，不应主动连接或读写正文。
+     * @param onError        HTTP 非 2xx、请求头配置或请求异常回调，可为空。
+     */
+    public static void post(String urlString, String body, Consumer<String> callback, Network network,
+                            Consumer<HttpURLConnection> headerConsumer, Consumer<String> onError) {
+        requestAsync("POST", urlString, body, callback, network, headerConsumer, onError);
+    }
+
+    /**
+     * 同步 GET 请求，仅可在后台线程调用，返回前释放连接。
+     *
+     * @param urlString 完整 HTTP/HTTPS 请求地址。
+     * @return HTTP 2xx 响应正文，按 UTF-8 解码并去除首尾空白；空正文返回空字符串。
+     * @throws IOException HTTP 非 2xx、连接、超时或读取失败。
+     * @throws IllegalStateException 在 Android 主线程调用。
+     * @throws RuntimeException 请求头配置回调抛出的异常原样传播。
+     */
+    public static String getSync(String urlString) throws IOException {
+        return getSync(urlString, null, null);
+    }
+
+    /**
+     * 同步 GET 请求，仅可在后台线程调用，返回前释放连接。
+     *
+     * @param urlString 完整 HTTP/HTTPS 请求地址。
+     * @param headerConsumer 发送前的连接配置回调，可为空；不得主动连接或读写正文。
+     * @return HTTP 2xx 响应正文，按 UTF-8 解码并去除首尾空白；空正文返回空字符串。
+     * @throws IOException HTTP 非 2xx、连接、超时或读取失败。
+     * @throws IllegalStateException 在 Android 主线程调用。
+     * @throws RuntimeException 请求头配置回调抛出的异常原样传播。
+     */
+    public static String getSync(String urlString, Consumer<HttpURLConnection> headerConsumer) throws IOException {
+        return getSync(urlString, null, headerConsumer);
+    }
+
+    /**
+     * 同步 GET 请求，仅可在后台线程调用，返回前释放连接。
+     *
+     * @param urlString 完整 HTTP/HTTPS 请求地址。
+     * @param network 指定网络；为 null 时使用系统默认网络。
+     * @param headerConsumer 发送前的连接配置回调，可为空；不得主动连接或读写正文。
+     * @return HTTP 2xx 响应正文，按 UTF-8 解码并去除首尾空白；空正文返回空字符串。
+     * @throws IOException HTTP 非 2xx、连接、超时或读取失败。
+     * @throws IllegalStateException 在 Android 主线程调用。
+     * @throws RuntimeException 请求头配置回调抛出的异常原样传播。
+     */
+    public static String getSync(String urlString, Network network, Consumer<HttpURLConnection> headerConsumer) throws IOException {
+        if (Looper.myLooper() == Looper.getMainLooper())
+            throw new IllegalStateException("Synchronous HTTP requests must run on a background thread.");
+
+        return request("GET", urlString, null, network, headerConsumer);
+    }
+
+    /**
+     * 同步 POST 请求，仅可在后台线程调用，返回前释放连接。
+     * 非空正文默认 Content-Type 为 application/json，可由请求头配置回调覆盖。
+     *
+     * @param urlString 完整 HTTP/HTTPS 请求地址。
+     * @param body UTF-8 请求正文，可为 null 或空字符串；JSON 由调用方序列化。
+     * @return HTTP 2xx 响应正文，按 UTF-8 解码并去除首尾空白；空正文返回空字符串。
+     * @throws IOException HTTP 非 2xx、连接、超时或读取失败。
+     * @throws IllegalStateException 在 Android 主线程调用。
+     * @throws RuntimeException 请求头配置回调抛出的异常原样传播。
+     */
+    public static String postSync(String urlString, String body) throws IOException {
+        return postSync(urlString, body, null, null);
+    }
+
+    /**
+     * 同步 POST 请求，仅可在后台线程调用，返回前释放连接。
+     * 非空正文默认 Content-Type 为 application/json，可由请求头配置回调覆盖。
+     *
+     * @param urlString 完整 HTTP/HTTPS 请求地址。
+     * @param body UTF-8 请求正文，可为 null 或空字符串；JSON 由调用方序列化。
+     * @param headerConsumer 发送前的连接配置回调，可为空；不得主动连接或读写正文。
+     * @return HTTP 2xx 响应正文，按 UTF-8 解码并去除首尾空白；空正文返回空字符串。
+     * @throws IOException HTTP 非 2xx、连接、超时或读取失败。
+     * @throws IllegalStateException 在 Android 主线程调用。
+     * @throws RuntimeException 请求头配置回调抛出的异常原样传播。
+     */
+    public static String postSync(String urlString, String body, Consumer<HttpURLConnection> headerConsumer) throws IOException {
+        return postSync(urlString, body, null, headerConsumer);
+    }
+
+    /**
+     * 同步 POST 请求，仅可在后台线程调用，返回前释放连接。
+     * 非空正文默认 Content-Type 为 application/json，可由请求头配置回调覆盖。
+     *
+     * @param urlString 完整 HTTP/HTTPS 请求地址。
+     * @param body UTF-8 请求正文，可为 null 或空字符串；JSON 由调用方序列化。
+     * @param network 指定网络；为 null 时使用系统默认网络。
+     * @param headerConsumer 发送前的连接配置回调，可为空；不得主动连接或读写正文。
+     * @return HTTP 2xx 响应正文，按 UTF-8 解码并去除首尾空白；空正文返回空字符串。
+     * @throws IOException HTTP 非 2xx、连接、超时或读取失败。
+     * @throws IllegalStateException 在 Android 主线程调用。
+     * @throws RuntimeException 请求头配置回调抛出的异常原样传播。
+     */
+    public static String postSync(String urlString, String body, Network network, Consumer<HttpURLConnection> headerConsumer) throws IOException {
+        if (Looper.myLooper() == Looper.getMainLooper())
+            throw new IllegalStateException("Synchronous HTTP requests must run on a background thread.");
+
+        return request("POST", urlString, body, network, headerConsumer);
+    }
+
+    private static void requestAsync(String method, String urlString, String body, Consumer<String> callback,
+                                     Network network, Consumer<HttpURLConnection> headerConsumer, Consumer<String> onError) {
         EXECUTOR.execute(() -> {
-            HttpURLConnection connection = null;
             String responseBody = null;
             String error = null;
-
             try {
-                URL url = new URL(urlString);
-                connection = (HttpURLConnection) (network == null ? url.openConnection() : network.openConnection(url));
-                connection.setRequestMethod("POST");
-                connection.setConnectTimeout(55000); // 55 秒连接超时
-                connection.setReadTimeout(50000);   // 50 秒读取超时
-
-                if (!TextUtils.isEmpty(body)) { // 确保有数据要发送
-                    connection.setDoOutput(true); // 允许写入请求体
-                    connection.setRequestProperty("Content-Type", "application/json"); // 设置内容类型为 JSON
-
-                    try (OutputStream outputStream = connection.getOutputStream();) {// 获取输出流并写入请求体
-                        byte[] outputBytes = body.getBytes(StandardCharsets.UTF_8); // 将 JSON 字符串转换为 UTF-8 字节数组
-                        outputStream.write(outputBytes);
-                        outputStream.flush(); // 确保数据被发送
-                    }
-                } else {
-                    // 如果是 POST 但没有 body，也应设置 doOutput 以表明有请求体（即使是空的）
-                    // 但这取决于服务器期望的行为，有时空 body 的 POST 不需要 setDoOutput
-                    // connection.setDoOutput(true); // 视情况而定
-                    Log.i(Helper.TAG, "POST request initiated without body data.");
-                }
-
-                int responseCode = connection.getResponseCode();
-                Log.d(Helper.TAG, "HTTP [" + urlString + "]Response Code: " + responseCode);
-
-                if (responseCode >= 200 && responseCode < 300) {
-                    responseBody = readInputStream(connection.getInputStream());
-                    Log.v(Helper.TAG, "Response [" + urlString + "] successful, body content:\n" + responseBody); // 使用 VERBOSE 级别，因为内容可能很长
-
-                } else {
-                    responseBody = readInputStream(connection.getErrorStream());// 尝试读取错误流
-                    error = "HTTP " + responseCode + " [" + urlString + "] response body: " + responseBody;
-                    Log.e(Helper.TAG, error);
-                }
+                responseBody = request(method, urlString, body, network, headerConsumer);
             } catch (Exception e) {
                 error = "Network request [" + urlString + "] failed with exception: " + e.getMessage();
                 Log.e(Helper.TAG, error, e);
-            } finally {
-                if (connection != null)
-                    connection.disconnect();
             }
-
             dispatchResult(callback, onError, responseBody, error);
         });
     }
 
-    // Callback exceptions must not be treated as request failures or trigger a second callback.
+    private static String request(String method, String urlString, String body, Network network,
+                                  Consumer<HttpURLConnection> headerConsumer) throws IOException {
+        URL url = new URL(urlString);
+        HttpURLConnection connection = (HttpURLConnection) (network == null ? url.openConnection() : network.openConnection(url));
+        return executeConnection(connection, method, body, headerConsumer);
+    }
+
+    /**
+     * 共用请求实现；配置、写入或读取失败时也必须释放连接。
+     */
+    static String executeConnection(HttpURLConnection connection, String method, String body,
+                                    Consumer<HttpURLConnection> headerConsumer) throws IOException {
+        try {
+            boolean post = "POST".equals(method);
+            boolean hasBody = post && body != null && !body.isEmpty();
+            connection.setRequestMethod(method);
+            connection.setConnectTimeout(post ? 55000 : 5000);
+            connection.setReadTimeout(post ? 50000 : 10000);
+            if (hasBody) {
+                connection.setDoOutput(true);
+                connection.setRequestProperty("Content-Type", "application/json");
+            }
+            if (headerConsumer != null)
+                headerConsumer.accept(connection);
+            if (hasBody) {
+                try (OutputStream output = connection.getOutputStream()) {
+                    output.write(body.getBytes(StandardCharsets.UTF_8));
+                    output.flush();
+                }
+            }
+            int status = connection.getResponseCode();
+            if (status < 200 || status >= 300)
+                throw new IOException("HTTP " + status + " [" + connection.getURL() + "] response body: " + readText(connection.getErrorStream()));
+
+            return readText(connection.getInputStream());
+        } finally {
+            connection.disconnect();
+        }
+    }
+
+    /**
+     * 回调异常不得被当作请求失败，也不得触发第二次回调。
+     */
     static void dispatchResult(Consumer<String> callback, Consumer<String> onError,
                                String responseBody, String error) {
         if (error != null) {
@@ -193,24 +276,25 @@ public class HttpRequest {
      * @throws UncheckedIOException 读取输入流失败时抛出
      */
     public static String readInputStream(InputStream in) {
-        if (in == null) {
-            Log.w(Helper.TAG, "The input stream is NULL.");
-
-            return "";
+        try {
+            return readText(in);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
+    }
 
-        try (InputStream in2 = in;
-             BufferedReader reader = new BufferedReader(new InputStreamReader(in2, StandardCharsets.UTF_8))) {
+    private static String readText(InputStream in) throws IOException {
+        if (in == null)
+            return "";
+
+        try (InputStream input = in;
+             BufferedReader reader = new BufferedReader(new InputStreamReader(input, StandardCharsets.UTF_8))) {
             StringBuilder response = new StringBuilder();
             String line;
-
             while ((line = reader.readLine()) != null)
                 response.append(line).append("\n");
 
             return response.toString().trim();
-        } catch (IOException e) {
-            Log.w(Helper.TAG, "Errors when reading inputstream to text");
-            throw new UncheckedIOException(e);
         }
     }
 }

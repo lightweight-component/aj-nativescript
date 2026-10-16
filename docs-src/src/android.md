@@ -47,11 +47,6 @@ Android 的 `com` 是原生全局命名空间，不需要从插件导入；插�
 
 上述路径按宿主声明文件的位置调整。三斜线引用是 TypeScript 指令，不是普通注释。
 
-## ConfirmDialog：原生确认框
-
-`com.ajaxjs.nativescript.android.utils.ConfirmDialog` 使用 Java 原生布局，随 JAR 发布。推荐通过跨平台 `confirm(options)` 调用，参数、默认值和 Promise 行为见 [通用工具](/common-helper#原生-confirm)。
-
-直接原生入口为 `ConfirmDialog.show(activity, optionsJson, callback)`：所有界面及回调在主线程执行，`callback.onResult(true/false)` 表示确认/正常关闭，`callback.onError(message)` 表示参数或显示错误，最多完成一次。宿主 Activity 停止或销毁时自动取消并解除生命周期监听；蒙层关闭由 maskClosable 控制，返回键始终允许取消。JSON 使用与 TS 相同的字段，颜色须为 `#AARRGGBB`。直接调用方需持有前台 Activity，避免同时展示多个弹窗。
 
 ## Helper：提示、剪贴板和应用状态
 
@@ -71,24 +66,6 @@ Android 的 `com` 是原生全局命名空间，不需要从插件导入；插�
 | `getVersionCode(context)` | 非空 Context | 宿主版本代码；找不到包信息时记录日志并返回 `-1` |
 
 没有明确接受空 Context 的方法应传入有效 Context；例如版本读取方法不会捕获空 Context 导致的异常。原生异常可由 TS 调用方捕获。
-
-### 提示与剪贴板的调用选择
-
-业务代码优先使用 [通用工具](../common-helper/) 中的 `toast(message)`、`copyToClipboard(str)` 和 `getFromClipboard()`，无需处理 Context。
-
-需要直接调用 Android Helper 时，方法签名带有 Context：
-
-```ts
-if (isAndroid) {
-    const helper = com.ajaxjs.nativescript.android.utils.Helper;
-    const context = Application.android.context;
-    helper.copyToClipboard(context, '需要复制的文本');
-    const text: string = helper.getFromClipboard(context);
-    helper.toast(context, '操作成功');
-}
-```
-
-原生 `toast` 接受空 Context，此时不显示；它不执行统一 TS 方法的参数检查。原生复制、读取需要有效 Context。跨平台文本行为、系统访问限制及模拟器验证结果统一见通用工具页。
 
 ### 网络状态与权限
 

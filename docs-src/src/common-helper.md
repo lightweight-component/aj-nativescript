@@ -34,7 +34,28 @@ const text: string = getFromClipboard();
 
 Android JAR 与 iOS XCFramework 随插件集成；更新原生组件后必须重新构建宿主 App，仅刷新 JS 不会更新原生能力。Android 当前 demo 最低为 API 26，iOS 插件最低为 iOS 15。
 
+
+## Toast
+
+![confirm](../asset/toast.png)
+
+```ts
+toast('操作成功');
+```
+
+非空提示保留原始文本，纯空白提示不显示。Android 使用系统 Toast.LENGTH_SHORT，并自动获取应用 Context；后台线程调用由原生侧切回主线程。iOS 在前台活动窗口显示约两秒，连续调用替换旧提示，不阻挡触摸；没有活动窗口时只记录日志。
+
+返回 `void` 不表示提示已显示。提示样式、实际时长及连续提示行为由各平台实现决定，统一的是调用签名。包入口的 `toast` 会拒绝非字符串参数，不支持的平台或 Android 应用尚未初始化时抛出异常。
+
+### 验证调用后的代码是否执行
+
+demo-app 的“测试”tab → “Toast 执行连续性测试”提供专门的诊断页面，分别调用包入口的 `toast` 和当前 `common-helper.ts` 封装。页面及控制台记录调用前、调用返回、后续同步计数、微任务、调用前后安排的计时器和 3 秒回调；全部执行后输出 `TOAST_FLOW_CHECK:PASS`。出现异常时页面显示失败，日志记录堆栈。
+
+已在 iPhone 17 Pro / iOS 26.5 与 Pixel 9 Pro XL / Android 15（API 35）前台主线程验证通过，当前版本未复现“Toast 显示后后续代码不执行”。这些结果不涵盖历史版本或后台线程调用；具体复现时可利用阶段标记确定停止位置。
+
 ## 原生 Confirm
+
+![confirm](../asset/confirm.jpg)
 
 ```ts
 import { confirm } from '@ajax-js/nativescript-common';
@@ -83,21 +104,6 @@ Android 原生入口为 `com.ajaxjs.nativescript.android.utils.ConfirmDialog.sho
 
 demo 入口：“测试”tab → “原生 Confirm 测试”。页面提供默认、自定义配色、两种蒙层策略、长正文、并发队列和无效配色测试，使用 `CONFIRM_CHECK` 日志及完成计数检查 await 后代码。
 
-## Toast
-
-```ts
-toast('操作成功');
-```
-
-非空提示保留原始文本，纯空白提示不显示。Android 使用系统 Toast.LENGTH_SHORT，并自动获取应用 Context；后台线程调用由原生侧切回主线程。iOS 在前台活动窗口显示约两秒，连续调用替换旧提示，不阻挡触摸；没有活动窗口时只记录日志。
-
-返回 `void` 不表示提示已显示。提示样式、实际时长及连续提示行为由各平台实现决定，统一的是调用签名。包入口的 `toast` 会拒绝非字符串参数，不支持的平台或 Android 应用尚未初始化时抛出异常。
-
-### 验证调用后的代码是否执行
-
-demo-app 的“测试”tab → “Toast 执行连续性测试”提供专门的诊断页面，分别调用包入口的 `toast` 和当前 `common-helper.ts` 封装。页面及控制台记录调用前、调用返回、后续同步计数、微任务、调用前后安排的计时器和 3 秒回调；全部执行后输出 `TOAST_FLOW_CHECK:PASS`。出现异常时页面显示失败，日志记录堆栈。
-
-已在 iPhone 17 Pro / iOS 26.5 与 Pixel 9 Pro XL / Android 15（API 35）前台主线程验证通过，当前版本未复现“Toast 显示后后续代码不执行”。这些结果不涵盖历史版本或后台线程调用；具体复现时可利用阶段标记确定停止位置。
 
 ## 剪贴板
 
