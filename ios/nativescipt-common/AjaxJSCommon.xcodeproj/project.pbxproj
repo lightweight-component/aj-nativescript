@@ -3,12 +3,12 @@
  objectVersion = 56;
  objects = {
  A00000000000000000000001 = {isa = PBXProject; buildConfigurationList = A00000000000000000000010; compatibilityVersion = "Xcode 14.0"; mainGroup = A00000000000000000000002; productRefGroup = A00000000000000000000003; targets = (A00000000000000000000004); };
- A00000000000000000000002 = {isa = PBXGroup; children = (A00000000000000000000022, A00000000000000000000005, A00000000000000000000018, A00000000000000000000014, A00000000000000000000015, A00000000000000000000020, A00000000000000000000003); sourceTree = "<group>"; };
+ A00000000000000000000002 = {isa = PBXGroup; children = (A00000000000000000000024, A00000000000000000000022, A00000000000000000000005, A00000000000000000000018, A00000000000000000000014, A00000000000000000000015, A00000000000000000000020, A00000000000000000000003); sourceTree = "<group>"; };
  A00000000000000000000003 = {isa = PBXGroup; children = (A00000000000000000000006); name = Products; sourceTree = "<group>"; };
  A00000000000000000000004 = {isa = PBXNativeTarget; buildConfigurationList = A00000000000000000000011; buildPhases = (A00000000000000000000007); buildRules = (); dependencies = (); name = AjaxJSCommon; productName = AjaxJSCommon; productReference = A00000000000000000000006; productType = "com.apple.product-type.framework"; };
  A00000000000000000000005 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/AjaxJSAes.swift; sourceTree = "<group>"; };
  A00000000000000000000006 = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = AjaxJSCommon.framework; sourceTree = BUILT_PRODUCTS_DIR; };
- A00000000000000000000007 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A00000000000000000000023, A00000000000000000000021, A00000000000000000000019, A00000000000000000000008, A00000000000000000000016, A00000000000000000000017); runOnlyForDeploymentPostprocessing = 0; };
+ A00000000000000000000007 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A00000000000000000000025, A00000000000000000000023, A00000000000000000000021, A00000000000000000000019, A00000000000000000000008, A00000000000000000000016, A00000000000000000000017); runOnlyForDeploymentPostprocessing = 0; };
  A00000000000000000000008 = {isa = PBXBuildFile; fileRef = A00000000000000000000005; };
  A00000000000000000000014 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/com/ajaxjs/nativescript/ios/Helper.swift; sourceTree = "<group>"; };
  A00000000000000000000015 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/com/ajaxjs/nativescript/ios/AppToast.swift; sourceTree = "<group>"; };
@@ -20,6 +20,8 @@
  A00000000000000000000021 = {isa = PBXBuildFile; fileRef = A00000000000000000000020; };
  A00000000000000000000022 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/com/ajaxjs/nativescript/ios/SecureStorage.swift; sourceTree = "<group>"; };
  A00000000000000000000023 = {isa = PBXBuildFile; fileRef = A00000000000000000000022; };
+ A00000000000000000000024 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/com/ajaxjs/nativescript/ios/HttpRequest.swift; sourceTree = "<group>"; };
+ A00000000000000000000025 = {isa = PBXBuildFile; fileRef = A00000000000000000000024; };
  A00000000000000000000010 = {isa = XCConfigurationList; buildConfigurations = (A00000000000000000000012); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
  A00000000000000000000011 = {isa = XCConfigurationList; buildConfigurations = (A00000000000000000000013); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
  A00000000000000000000012 = {isa = XCBuildConfiguration; name = Release; buildSettings = {IPHONEOS_DEPLOYMENT_TARGET = 15.0; SDKROOT = iphoneos; ALWAYS_SEARCH_USER_PATHS = NO; SWIFT_VERSION = 5.0; }; };

@@ -200,3 +200,31 @@ demo-app 的“测试”tab 提供“Toast 测试”按钮，保留底部 tabs�
 推荐使用统一的 `setSecureItem/getSecureItem/removeSecureItem`，详见 [通用工具：安全存储](/common-helper#字符串安全存储)。原生源码 `Sources/com/ajaxjs/nativescript/ios/SecureStorage.swift`，ObjC 类 `AjaxJSSecureStorage`，NativeScript 方法为 `setItemValue(key, value)`、`getItem(key)`、`removeItem(key)`。返回 CryptoResult，须先检查 error：写入/删除成功 value=true；读取不存在 value=null，已保存空字符串仍返回空字符串。
 
 凭据使用独立 Keychain service，与 AES 密钥隔离；WhenUnlockedThisDeviceOnly、不同步，锁屏可能不可访问，卸载重装后可能仍保留。键名非空白且最多 128 UTF-16 单元，值最多 65536 UTF-8 字节；业务需要在退出登录时显式删除。
+
+## Swift HTTP 请求
+
+`Sources/com/ajaxjs/nativescript/ios/HttpRequest.swift` 提供原生 `HttpRequest.get` 和 `HttpRequest.post`，使用 URLSession 异步请求，默认超时 15 秒。支持自定义请求头；POST 的字符串正文原样编码为 UTF-8，未传 Content-Type 时默认 `application/json; charset=utf-8`，不自动序列化或解析 JSON。
+
+```swift
+HttpRequest.get("https://example.com/api/status", headers: ["Accept": "application/json"]) { status, body, error in
+    if let error = error {
+        /*
+         * 在此处理请求失败，不记录凭据或响应正文。
+         */
+        return
+    }
+    /*
+     * 在此处理成功的 UTF-8 正文 body 和 HTTP 状态码 status。
+     */
+}
+
+HttpRequest.post("https://example.com/api/action", body: "{\"action\":\"stop\"}") { status, body, error in
+    /*
+     * 先检查 error，再使用 status 与 body。
+     */
+}
+```
+
+回调统一异步进入主线程。HTTP 2xx 为成功；非 2xx 返回错误、实际状态码和可解码的正文。无 HTTP 响应时状态码为 0；网络、取消、参数或非 UTF-8 解码失败均通过 error 返回，204 无正文时 body 为 `""`。返回的 URLSessionDataTask 已自动启动，可调用 cancel；参数错误返回 nil 并异步回调。查询参数由调用方用 URLComponents 编码，不拼接未编码用户输入。
+
+类的 ObjC 名称为 `AjaxJSHttpRequest`，选择子为 `get:headers:timeout:completion:` 和 `post:body:headers:timeout:completion:`；当前没有额外封装统一 TS 接口。HTTP 明文访问遵循宿主 ATS 配置，不会自动放宽传输安全限制或绕过 TLS 证书校验。
