@@ -108,7 +108,7 @@
 <tbody>
 <tr>
 <td><code>@ajax-js/nativescript-common</code></td>
-<td>公共工具、Android Keystore / iOS Keychain、AES-GCM JSON 与 AAD 加解密、机器人 HKDF 设备密钥派生</td>
+<td>公共工具、Token/MQTT 凭据安全存储、Android Keystore / iOS Keychain、AES-GCM JSON 与 AAD 加解密、机器人 HKDF 设备密钥派生</td>
 <td>Android / iOS；已实现</td>
 </tr>
 <tr>
@@ -140,7 +140,7 @@
 <tbody>
 <tr>
 <td><a href="../common-helper/">通用工具</a></td>
-<td>Android / iOS 一致的 TS API：Toast、剪贴板复制与读取</td>
+<td>Android / iOS 一致的 TS API：Confirm、Toast、剪贴板与 Token/MQTT 凭据安全存储</td>
 </tr>
 <tr>
 <td><a href="../android/">安卓工具类</a></td>
@@ -199,7 +199,7 @@
 <p>目录名中的 <code>nativescipt</code> 为工程当前使用的名称，查找源码或配置路径时请沿用该拼写。各 Java 工程和 npm 插件独立构建，iOS 原生产物通过 XCFramework 集成到插件的 <code>platforms/ios</code>。</p>
 <h2>使用与演示</h2>
 <p>先按所需组件的 README 安装插件并完成宿主配置，再通过 TS 接口调用。Android JAR 和 iOS XCFramework 的更新都需要重新构建宿主 App，刷新 JS 不能替换原生组件。</p>
-<p><code>demo-app</code> 沿用 NativeScript + Vue + Vite 工程，底部“测试”tab 提供 Toast、剪贴板、AES 加解密及 MQTT v3 / v5 测试入口。模拟器或设备运行、依赖准备与完整构建步骤见 <a href="https://github.com/lightweight-component/aj-nativescript/blob/main/demo-app/README.md">demo-app README</a>。</p>
+<p><code>demo-app</code> 沿用 NativeScript + Vue + Vite 工程，底部“测试”tab 提供 Confirm、Toast、剪贴板、安全存储、AES 加解密及 MQTT v3 / v5 测试入口。模拟器或设备运行、依赖准备与完整构建步骤见 <a href="https://github.com/lightweight-component/aj-nativescript/blob/main/demo-app/README.md">demo-app README</a>。</p>
 <p>Android 原生组件的构建入口见 <a href="../android-native/">安卓原生工具</a>；iOS Framework 构建与桥接说明见 <a href="../ios/">iOS 工具类</a>。npm 打包、版本升级与发布流程见 common 组件 README。</p>
 <h2>仓库与许可证</h2>
 <ul>

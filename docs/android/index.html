@@ -117,6 +117,9 @@ if (isAndroid) {
 <pre><code class="language-ts">/// &lt;reference path=&quot;../node_modules/@ajax-js/nativescript-common/types/ajaxjs-nativescript.d.ts&quot; /&gt;
 </code></pre>
 <p>上述路径按宿主声明文件的位置调整。三斜线引用是 TypeScript 指令，不是普通注释。</p>
+<h2>ConfirmDialog：原生确认框</h2>
+<p><code>com.ajaxjs.nativescript.android.utils.ConfirmDialog</code> 使用 Java 原生布局，随 JAR 发布。推荐通过跨平台 <code>confirm(options)</code> 调用，参数、默认值和 Promise 行为见 <a href="/common-helper#%E5%8E%9F%E7%94%9F-confirm">通用工具</a>。</p>
+<p>直接原生入口为 <code>ConfirmDialog.show(activity, optionsJson, callback)</code>：所有界面及回调在主线程执行，<code>callback.onResult(true/false)</code> 表示确认/正常关闭，<code>callback.onError(message)</code> 表示参数或显示错误，最多完成一次。宿主 Activity 停止或销毁时自动取消并解除生命周期监听；蒙层关闭由 maskClosable 控制，返回键始终允许取消。JSON 使用与 TS 相同的字段，颜色须为 <code>#AARRGGBB</code>。直接调用方需持有前台 Activity，避免同时展示多个弹窗。</p>
 <h2>Helper：提示、剪贴板和应用状态</h2>
 <p>原生类：<code>com.ajaxjs.nativescript.android.utils.Helper</code>。日志标签为 <code>AJ_HELPER</code>。</p>
 <table>
@@ -328,6 +331,9 @@ if (isAndroid) {
 <h2>源码与原生构建</h2>
 <p>源码位于 <code>android/nativescipt-common/aj-nativescript/src/main/java/com/ajaxjs/nativescript/android/utils/Helper.java</code> 和同目录 <code>MarketRedirect.java</code>；原生方法声明位于插件 <code>types/ajaxjs-nativescript.d.ts</code>。</p>
 <p>JAR 构建、复制与 SDK 配置见 <a href="../android-native/">安卓原生工具：原生工程与构建</a>。本文按当前源码整理接口，不表示所有厂商市场、权限场景均已完成实机验证。</p>
+<h2>字符串安全存储</h2>
+<p>推荐使用包入口的 <code>setSecureItem/getSecureItem/removeSecureItem</code>，用于 Token 与 MQTT 凭据，详见 <a href="/common-helper#%E5%AD%97%E7%AC%A6%E4%B8%B2%E5%AE%89%E5%85%A8%E5%AD%98%E5%82%A8">通用工具：安全存储</a>。原生类 <code>com.ajaxjs.nativescript.android.storage.SecureStorage</code> 提供 <code>setItem(context, key, value)</code>、<code>getItem(context, key)</code>、<code>removeItem(context, key)</code>，获取不到返回 null，失败抛出异常。键名非空白、最多 128 UTF-16 单元；值最多 65536 UTF-8 字节，空字符串有效，TS 接口保证合法 Unicode。</p>
+<p>本机 AES-256 密钥由 AndroidKeyStore 随机生成，不可导出，不复用机器人密钥。AES-GCM 密文通过 AtomicFile 保存于 noBackupFilesDir，AAD 绑定逻辑键名，避免备份恢复或换名误读。密钥丢失和认证失败不会静默回退；支持单进程调用，当前原生方法为同步小型 I/O。</p>
 
             </article>
         </div>

@@ -96,6 +96,7 @@
 <p><code>@ajax-js/nativescript-common</code> 提供 iOS 原生 Helper，包含 Toast、应用版本信息、App Store 跳转和界面方向设置。适用于 NativeScript 工程，与 Vue 视图层无关。</p>
 <p>插件最低支持 iOS 15；场景方向请求要求 iOS 16 及以上。Android 和 iOS 可共用 <code>toast(message)</code>、<code>copyToClipboard(str)</code> 和 <code>getFromClipboard()</code>，其他 Helper 工具仅支持 iOS。</p>
 <h2>安装与调用入口</h2>
+<p>独立的 <code>Sources/com/ajaxjs/nativescript/ios/ConfirmDialog.swift</code> 还提供自定义原生确认框。推荐通过统一 <code>confirm(options)</code> 调用，配色、按钮文案、长正文滚动、正文对齐与蒙层控制见 <a href="/common-helper#%E5%8E%9F%E7%94%9F-confirm">通用工具</a>。原生 ObjC 类为 <code>AjaxJSConfirmDialog</code>，NativeScript 方法名 <code>showCompletion(optionsJson, callback)</code>；JSON 颜色须为 <code>#AARRGGBB</code>，callback 接收 <code>(confirmed, error)</code>，无活动窗口返回 false，显示/参数失败返回非空 error，完成最多一次。原生在主线程从活动场景最上层控制器展示，不使用 UIAlertController 私有属性。</p>
 <pre><code class="language-sh">npm install @ajax-js/nativescript-common
 </code></pre>
 <p>已发布的 npm 包携带 <code>platforms/ios/AjaxJSCommon.xcframework</code>，NativeScript 在 iOS 构建时集成原生组件，无需在宿主重复复制 Swift 源码。</p>
@@ -294,6 +295,31 @@ npm run build
 </code></pre>
 <p>构建脚本使用独立 Xcode Framework 工程，生成真机 arm64 和模拟器 arm64/x86_64 的 XCFramework，并复制到插件 <code>platforms/ios</code>。使用当前工程的 Xcode 27 和 iOS 15 部署目标；更新后需要重新构建宿主 App，确保加载最新原生接口。</p>
 <p>demo-app 的“测试”tab 提供“Toast 测试”按钮，保留底部 tabs。已在 iPhone 17 Pro / iOS 26.5 模拟器验证 Toast 显示、自动消失及宿主版本读取；App Store 跳转和实际界面旋转尚未执行验证。</p>
+<h2>Token 与 MQTT 凭据安全存储</h2>
+<p>推荐使用统一的 <code>setSecureItem/getSecureItem/removeSecureItem</code>，详见 <a href="/common-helper#%E5%AD%97%E7%AC%A6%E4%B8%B2%E5%AE%89%E5%85%A8%E5%AD%98%E5%82%A8">通用工具：安全存储</a>。原生源码 <code>Sources/com/ajaxjs/nativescript/ios/SecureStorage.swift</code>，ObjC 类 <code>AjaxJSSecureStorage</code>，NativeScript 方法为 <code>setItemValue(key, value)</code>、<code>getItem(key)</code>、<code>removeItem(key)</code>。返回 CryptoResult，须先检查 error：写入/删除成功 value=true；读取不存在 value=null，已保存空字符串仍返回空字符串。</p>
+<p>凭据使用独立 Keychain service，与 AES 密钥隔离；WhenUnlockedThisDeviceOnly、不同步，锁屏可能不可访问，卸载重装后可能仍保留。键名非空白且最多 128 UTF-16 单元，值最多 65536 UTF-8 字节；业务需要在退出登录时显式删除。</p>
+<h2>Swift HTTP 请求</h2>
+<p><code>Sources/com/ajaxjs/nativescript/ios/HttpRequest.swift</code> 提供原生 <code>HttpRequest.get</code> 和 <code>HttpRequest.post</code>，使用 URLSession 异步请求，默认超时 15 秒。支持自定义请求头；POST 的字符串正文原样编码为 UTF-8，未传 Content-Type 时默认 <code>application/json; charset=utf-8</code>，不自动序列化或解析 JSON。</p>
+<pre><code class="language-swift">HttpRequest.get(&quot;https://example.com/api/status&quot;, headers: [&quot;Accept&quot;: &quot;application/json&quot;]) { status, body, error in
+    if let error = error {
+        /*
+         * 在此处理请求失败，不记录凭据或响应正文。
+         */
+        return
+    }
+    /*
+     * 在此处理成功的 UTF-8 正文 body 和 HTTP 状态码 status。
+     */
+}
+
+HttpRequest.post(&quot;https://example.com/api/action&quot;, body: &quot;{\&quot;action\&quot;:\&quot;stop\&quot;}&quot;) { status, body, error in
+    /*
+     * 先检查 error，再使用 status 与 body。
+     */
+}
+</code></pre>
+<p>回调统一异步进入主线程。HTTP 2xx 为成功；非 2xx 返回错误、实际状态码和可解码的正文。无 HTTP 响应时状态码为 0；网络、取消、参数或非 UTF-8 解码失败均通过 error 返回，204 无正文时 body 为 <code>&quot;&quot;</code>。返回的 URLSessionDataTask 已自动启动，可调用 cancel；参数错误返回 nil 并异步回调。查询参数由调用方用 URLComponents 编码，不拼接未编码用户输入。</p>
+<p>类的 ObjC 名称为 <code>AjaxJSHttpRequest</code>，选择子为 <code>get:headers:timeout:completion:</code> 和 <code>post:body:headers:timeout:completion:</code>；当前没有额外封装统一 TS 接口。HTTP 明文访问遵循宿主 ATS 配置，不会自动放宽传输安全限制或绕过 TLS 证书校验。</p>
 
             </article>
         </div>
