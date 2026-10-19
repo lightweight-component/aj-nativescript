@@ -17,11 +17,48 @@ import java.io.IOException;
  * 本类不自动创建后台线程，也不向主线程切换。
  */
 public class GetCredential {
+    public static final String USER_TOKEN_KEY = "user_token";
+
+    public static final String USER_REFRESH_TOKEN_KEY = "user_refresh_token";
+
+    public static void saveUserTokenKey(Context context, String userToken, String refreshToken) {
+        SecureStorage.setItem(context, USER_TOKEN_KEY, userToken);
+        SecureStorage.setItem(context, USER_REFRESH_TOKEN_KEY, refreshToken);
+    }
+
+    public static String getUserToken(Context context) {
+       return SecureStorage.getItem(context, USER_TOKEN_KEY);
+    }
+
+    public static String getUserRefreshToken(Context context) {
+       return SecureStorage.getItem(context, USER_REFRESH_TOKEN_KEY);
+    }
+
     /**
      * 凭据接口完整地址，使用前应配置为实际的 HTTPS 地址。
      * 请求方法为 GET，携带 Bearer Token，禁止自动跟随重定向。
      */
     public static String URL = "https://...";
+
+    /**
+     * 从安全存储读取用户 Token，再获取缓存或接口中的凭据。
+     * 必须在后台线程调用；即使凭据已缓存，也会先读取 Token，Token 不存在时失败。
+     *
+     * @param context      有效的 Android Context，建议传入 Application Context。
+     * @param key          凭据缓存键，非空白且最多 128 个 UTF-16 单元；应按用户区分。
+     * @return 长度为 2 的数组，索引 0 为用户名，索引 1 为 Base64 解码后的 UTF-8 密码。
+     * @throws IllegalArgumentException 存储键无效，或接口提供的用户名、解码后的密码包含下划线。
+     * @throws IllegalStateException    Token 不存在、存储操作失败、凭据格式无效，或缓存未命中时在主线程发起请求。
+     * @throws RuntimeException         网络请求失败；原始 IOException 作为 cause 保留。
+     */
+    public static String[] getCredentialByUserTokenKey(Context context, String key) {
+        String userToken = getUserToken(context);
+
+        if (userToken == null)
+            throw new IllegalStateException("获取用户 token 失败，用户未登录？");
+
+        return getCredential(context, key, userToken);
+    }
 
     /**
      * 从安全存储读取用户 Token，再获取缓存或接口中的凭据。
