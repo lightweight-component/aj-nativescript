@@ -14,6 +14,7 @@ public final class SecureStorage: NSObject {
     private static func perform(_ action: () throws -> Any?) -> CryptoResult {
         lock.lock()
         defer { lock.unlock() }
+
         do {
             return CryptoResult(value: try action())
         } catch {
@@ -29,6 +30,7 @@ public final class SecureStorage: NSObject {
         if key.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || key.utf16.count > 128 {
             throw fail("Secure storage key must be nonblank and at most 128 UTF-16 units.")
         }
+
         return [kSecClass as String: kSecClassGenericPassword,
                 kSecAttrService as String: service, kSecAttrAccount as String: key,
                 kSecAttrSynchronizable as String: false]
@@ -50,12 +52,15 @@ public final class SecureStorage: NSObject {
             let request = try query(key)
             var data = Data(value.utf8)
             defer { data.resetBytes(in: 0..<data.count) }
+
             if data.count > 65536 {
                 throw fail("Secure storage value must be at most 65536 UTF-8 bytes.")
             }
+
             let attributes: [String: Any] = [kSecValueData as String: data,
                 kSecAttrAccessible as String: kSecAttrAccessibleWhenUnlockedThisDeviceOnly]
             let status = SecItemUpdate(request as CFDictionary, attributes as CFDictionary)
+
             if status == errSecItemNotFound {
                 var insertion = request
                 attributes.forEach { insertion[$0.key] = $0.value }
@@ -63,6 +68,7 @@ public final class SecureStorage: NSObject {
             } else {
                 try check(status)
             }
+
             return true
         }
     }
@@ -79,17 +85,22 @@ public final class SecureStorage: NSObject {
             request[kSecMatchLimit as String] = kSecMatchLimitOne
             var item: CFTypeRef?
             let status = SecItemCopyMatching(request as CFDictionary, &item)
+            
             if status == errSecItemNotFound {
                 return nil
             }
+
             try check(status)
+
             guard var data = item as? Data else {
                 throw fail("Secure storage contains invalid data.")
             }
+
             defer { data.resetBytes(in: 0..<data.count) }
             guard data.count <= 65536, let value = String(data: data, encoding: .utf8) else {
                 throw fail("Secure storage contains invalid UTF-8 data.")
             }
+
             return value
         }
     }

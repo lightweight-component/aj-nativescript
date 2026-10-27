@@ -38,7 +38,7 @@ npx ns build ios --emulator
 
 ## 功能文档与演示
 
-- [通用工具](../../docs-src/src/common-helper.md)：原生 Confirm（`Promise<boolean>`）、Toast、剪贴板及 Token/MQTT 凭据安全存储（`setSecureItem/getSecureItem/removeSecureItem`）统一接口。
+- [通用工具](../../docs-src/src/common-helper.md)：原生 Confirm（`Promise<boolean>`）、Toast、剪贴板及 Token/MQTT 凭据安全存储（`setSecureItem/getSecureItem/removeSecureItem`）统一接口；提供 `saveUserToken/getUserToken/getUserRefreshToken` 固定键登录 Token 存取及 `setMqttCredential/getMqttUsername/getMqttPassword` 固定键 MQTT 账号密码存取；新增 `removeUserToken/removeMqttCredential` 和 `saveClientCredential/getClientCredential/removeClientCredential` 客户端 Token 存取；AES 密钥字符串缓存使用 `saveAesKey/getAesKey/removeAesKey`（与 `importAesKey` 别名导入不同）；同步读取可使用 `getUserTokenSync/getUserRefreshTokenSync`，返回 `string | null`，失败同步抛异常。
 - [Keystore 与 AES-GCM](../../docs-src/src/keystore-aes.md)：直接导入及 HTTPS 领取密钥、HKDF-SHA256 机器人一机一密、JSON/AAD 加解密、兼容性及 ESP32 修改提示词。
 - [iOS Helper](../../docs-src/src/ios.md)：Toast、应用版本、App Store 跳转和界面方向工具。
 - [demo 文档](../../demo-app/README.md)：在现有 NativeScript App 的“测试”tab 验证组件。

@@ -169,3 +169,30 @@ JAR 构建、复制与 SDK 配置见 [安卓原生工具：原生工程与构建
 推荐使用包入口的 `setSecureItem/getSecureItem/removeSecureItem`，用于 Token 与 MQTT 凭据，详见 [通用工具：安全存储](/common-helper#字符串安全存储)。原生类 `com.ajaxjs.nativescript.android.storage.SecureStorage` 提供 `setItem(context, key, value)`、`getItem(context, key)`、`removeItem(context, key)`，获取不到返回 null，失败抛出异常。键名非空白、最多 128 UTF-16 单元；值最多 65536 UTF-8 字节，空字符串有效，TS 接口保证合法 Unicode。
 
 本机 AES-256 密钥由 AndroidKeyStore 随机生成，不可导出，不复用机器人密钥。AES-GCM 密文通过 AtomicFile 保存于 noBackupFilesDir，AAD 绑定逻辑键名，避免备份恢复或换名误读。密钥丢失和认证失败不会静默回退；支持单进程调用，当前原生方法为同步小型 I/O。
+
+
+## 固定键用户 Token
+
+`com.ajaxjs.nativescript.android.storage.GetCredential` 保留既有 `saveUserToken(context, userToken, refreshToken)`、`getUserToken(context)`、`getUserRefreshToken(context)` 同步接口，使用 `user_token` 和 `user_refresh_token` 安全存储键。新增对应 `*Async` 方法及 `TokenCallback`，供统一 TS 接口使用：存储在串行后台线程执行，成功 `onResult` 和失败 `onError` 在主线程回调，保存成功及读取缺失的结果为 null。错误不包含凭据；原有同步方法仍应由调用方安排到后台线程。
+
+推荐使用包入口的 `saveUserToken/getUserToken/getUserRefreshToken`，无需传 Context。两项写入不是事务，使用方法与清理示例见 [通用工具](/common-helper#固定键用户-token-接口)。MQTT 凭据改为固定键 `mqtt_username`、`mqtt_password` 分开存取，原生不再提供凭据 HTTP 请求或旧 getCredential 方法。
+
+
+需要同步生成 Cookie 时，可从包入口调用 `getUserTokenSync(): string | null`、`getUserRefreshTokenSync(): string | null`，直接复用 GetCredential 的原生同步读取，不进入 Async 后台队列。当前线程可能因磁盘读取或解密阻塞，存储/桥接失败同步抛出异常。它们不等待尚未完成的异步写入；必须先 await 保存完成，再读取。原有 Promise 接口保持不变，完整示例见 [同步读取与 Cookie](/common-helper#同步读取与-cookie)。
+
+
+## MQTT 账号密码
+
+`GetCredential.setMqttCredential(context, username, password)` 依次保存两项，`getMqttUsername(context)`、`getMqttPassword(context)` 分别读取，缺失返回 null，空字符串保留，失败抛异常。字段支持下划线与 Unicode，不拼接、不 Base64 解码。两次写入不是事务，失败时停止连接，重新获取并保存两项。HTTP 在业务 TS 层执行，原生只做同步本机存取；统一调用方式见 [通用工具](/common-helper#mqtt-账号密码存取)。原有 Token 接口保持不变。
+
+
+## 删除及客户端认证 Token
+
+`GetCredential.removeUserToken(context)`、`removeMqttCredential(context)` 分别幂等删除各自两项，互不影响；非事务，失败应重试。客户端 Token 使用 `CLIENT_CREDENTIAL_KEY = "client_credential"`，提供静态 `saveClientCredential(context, token)`、`getClientCredential(context)`、`removeClientCredential(context)`，只操作该键，读取缺失 null，空值保留，失败抛异常。HTTP 获取和刷新由业务 TS 层处理。
+
+统一 TS 删除及客户端方法均同步返回；用户保存方法为 `saveUserToken(...): Promise<void>`，Android 通过 `saveUserTokenAsync` 执行。旧 saveUserTokenKey 名称已移除。退出前需等待在途保存并阻止后续写回，再删除。完整接口、格式和清理说明见 [通用工具](/common-helper#客户端认证-token)。
+
+
+## AES 密钥字符串
+
+GetCredential 的 `AES_KEY_KEY = "AES_KEY"` 保存的是密钥字符串缓存，提供静态 `saveAesKey(context, token)`、`getAesKey(context)`、`removeAesKey(context)`。每项最多 65536 UTF-8 字节，允许空值，原样存取；读取缺失 null，失败抛异常。不校验 Base64 或 AES 长度，不执行 HKDF，不导入密码学 Keystore 别名；删除只影响此缓存，不删除 importAesKey 导入的密钥。统一 TS 三方法均同步，见 [通用工具](/common-helper#aes-密钥字符串缓存)。Java 类、常量、回调及方法的 Javadoc 已补充参数、返回值、线程和异常说明。

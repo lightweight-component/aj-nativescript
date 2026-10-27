@@ -526,3 +526,130 @@ declare class AjaxJSSecureStorage extends NSObject {
      */
     static removeItem(key: string): AjaxJSCryptoResult;
 }
+
+/**
+ * Android 已有的固定键用户 Token 方法；仅本机存储，不涉及网络请求。
+ */
+declare namespace com.ajaxjs.nativescript.android.storage {
+    class GetCredential extends java.lang.Object {
+        static readonly AES_KEY_KEY: string;
+        /**
+         * 同步保存密钥字符串，不校验 AES/Base64 或导入别名；最多 65536 UTF-8 字节。
+         */
+        static saveAesKey(context: AjaxjsAndroidContext, token: string): void;
+        /**
+         * 同步读取原始字符串，缺失 null，存储失败抛异常。
+         */
+        static getAesKey(context: AjaxjsAndroidContext): string | null;
+        /**
+         * 幂等删除 AES_KEY 字符串，不删除密码学密钥别名，失败抛异常。
+         */
+        static removeAesKey(context: AjaxjsAndroidContext): void;
+        static readonly CLIENT_CREDENTIAL_KEY: string;
+        /**
+         * 同步幂等删除对应类别；双项删除非事务，失败抛出异常。
+         */
+        static removeUserToken(context: AjaxjsAndroidContext): void;
+        static removeMqttCredential(context: AjaxjsAndroidContext): void;
+        static removeClientCredential(context: AjaxjsAndroidContext): void;
+        /**
+         * 客户端 Token 同步保存/覆盖及读取；最多 65536 UTF-8 字节，缺失 null。
+         */
+        static saveClientCredential(context: AjaxjsAndroidContext, token: string): void;
+        static getClientCredential(context: AjaxjsAndroidContext): string | null;
+        static readonly MQTT_USERNAME_KEY: string;
+        static readonly MQTT_PASSWORD_KEY: string;
+        /**
+         * 同步分别读取固定安全项，缺失 null，空字符串保留，存储失败抛异常。
+         */
+        static getMqttUsername(context: AjaxjsAndroidContext): string | null;
+        static getMqttPassword(context: AjaxjsAndroidContext): string | null;
+        /**
+         * 依次写入两项，不触网或解码；允许下划线，每项最多 65536 UTF-8 字节。
+         * 正常返回表示完成；失败可能只写入第一项，抛出异常。
+         */
+        static setMqttCredential(context: AjaxjsAndroidContext, username: string, password: string): void;
+        /**
+         * 后台执行对应同步操作，结果主线程回调，不记录凭据。
+         */
+        static saveUserTokenAsync(context: AjaxjsAndroidContext, userToken: string, refreshToken: string, callback: GetCredential.TokenCallback): void;
+        static getUserTokenAsync(context: AjaxjsAndroidContext, callback: GetCredential.TokenCallback): void;
+        static getUserRefreshTokenAsync(context: AjaxjsAndroidContext, callback: GetCredential.TokenCallback): void;
+        static readonly USER_TOKEN_KEY: string;
+        static readonly USER_REFRESH_TOKEN_KEY: string;
+        /**
+         * 依次写入两项，非事务；每项最多 65536 UTF-8 字节，失败抛出异常。
+         */
+        static saveUserToken(context: AjaxjsAndroidContext, userToken: string, refreshToken: string): void;
+        /**
+         * 读取 user_token，缺失 null；存储失败抛出异常。
+         */
+        static getUserToken(context: AjaxjsAndroidContext): string | null;
+        /**
+         * 读取 user_refresh_token，缺失 null；存储失败抛出异常。
+         */
+        static getUserRefreshToken(context: AjaxjsAndroidContext): string | null;
+    }
+}
+
+/**
+ * iOS 固定键 Token 存储；先检查 error，读取缺失时 value=null，写入成功 value=true。
+ */
+declare class AjaxJSGetCredential extends NSObject {
+    static readonly AES_KEY_KEY: string;
+    /**
+     * AES_KEY 字符串存取；不校验 AES/Base64、不导入别名，须先检查 error。
+     * 保存/删除成功 value=true，读取缺失 value=null，允许空字符串。
+     */
+    static saveAesKey(token: string): AjaxJSCryptoResult;
+    static getAesKey(): AjaxJSCryptoResult;
+    static removeAesKey(): AjaxJSCryptoResult;
+    static readonly CLIENT_CREDENTIAL_KEY: string;
+    /**
+     * 同步幂等删除对应类别；成功 value=true，失败 error，双项删除非事务。
+     */
+    static removeUserToken(): AjaxJSCryptoResult;
+    static removeMqttCredential(): AjaxJSCryptoResult;
+    static removeClientCredential(): AjaxJSCryptoResult;
+    /**
+     * 客户端 Token 同步保存/读取；最多 65536 UTF-8 字节，读取缺失 value=null。
+     */
+    static saveClientCredential(token: string): AjaxJSCryptoResult;
+    static getClientCredential(): AjaxJSCryptoResult;
+    static readonly MQTT_USERNAME_KEY: string;
+    static readonly MQTT_PASSWORD_KEY: string;
+    /**
+     * 同步读取固定安全项，缺失 value=null，错误通过 error 返回。
+     */
+    static getMqttUsername(): AjaxJSCryptoResult;
+    static getMqttPassword(): AjaxJSCryptoResult;
+    /**
+     * 同步依次写入两个安全项，成功 value=true，失败 error，非事务。
+     */
+    static setMqttCredentialPassword(username: string, password: string): AjaxJSCryptoResult;
+    static readonly USER_TOKEN_KEY: string;
+    static readonly USER_REFRESH_TOKEN_KEY: string;
+    /**
+     * 依次写入两项，非事务；每项最多 65536 UTF-8 字节，允许空字符串。
+     */
+    static saveUserTokenRefreshToken(userToken: string, refreshToken: string): AjaxJSCryptoResult;
+    /**
+     * 读取 user_token，Keychain 错误通过 error 返回。
+     */
+    static getUserToken(): AjaxJSCryptoResult;
+    /**
+     * 读取 user_refresh_token，Keychain 错误通过 error 返回。
+     */
+    static getUserRefreshToken(): AjaxJSCryptoResult;
+}
+
+/**
+ * Android Token 后台任务回调；保存成功/读取不到返回 null，失败返回通用错误。
+ */
+declare namespace com.ajaxjs.nativescript.android.storage.GetCredential {
+    class TokenCallback extends java.lang.Object {
+        constructor(implementation: { onResult(value: string | null): void; onError(message: string): void });
+        onResult(value: string | null): void;
+        onError(message: string): void;
+    }
+}

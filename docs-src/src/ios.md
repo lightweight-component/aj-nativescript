@@ -195,3 +195,32 @@ HttpRequest.post("https://example.com/api/action", body: "{\"action\":\"stop\"}"
 回调统一异步进入主线程。HTTP 2xx 为成功；非 2xx 返回错误、实际状态码和可解码的正文。无 HTTP 响应时状态码为 0；网络、取消、参数或非 UTF-8 解码失败均通过 error 返回，204 无正文时 body 为 `""`。返回的 URLSessionDataTask 已自动启动，可调用 cancel；参数错误返回 nil 并异步回调。查询参数由调用方用 URLComponents 编码，不拼接未编码用户输入。
 
 类的 ObjC 名称为 `AjaxJSHttpRequest`，选择子为 `get:headers:timeout:completion:` 和 `post:body:headers:timeout:completion:`；当前没有额外封装统一 TS 接口。HTTP 明文访问遵循宿主 ATS 配置，不会自动放宽传输安全限制或绕过 TLS 证书校验。
+
+
+## 固定键用户 Token
+
+`Sources/com/ajaxjs/nativescript/ios/GetCredential.swift` 提供 `GetCredential.saveUserToken(_:refreshToken:)`、`getUserToken()`、`getUserRefreshToken()`，使用 `user_token` 和 `user_refresh_token` 键名，与 Android 对应方法一致。原生 ObjC 名为 `AjaxJSGetCredential`，保存选择子为 `saveUserToken:refreshToken:`，NativeScript 方法名为 `saveUserTokenRefreshToken`。返回 CryptoResult，须先检查 error；保存成功 value=true，读取缺失 value=null。两项写入不是事务，Keychain 锁定或存储错误不会静默当作未找到。
+
+推荐使用包入口统一导出的 `saveUserToken/getUserToken/getUserRefreshToken` Promise 方法，参数、清理及异常说明见 [通用工具](/common-helper#固定键用户-token-接口)。此类还提供 MQTT 账号密码的固定键存取，不承担凭据网络请求。
+
+
+包入口另提供 `getUserTokenSync(): string | null`、`getUserRefreshTokenSync(): string | null`，直接读取同一 Keychain 项，缺失返回 null，空字符串保留。Keychain 锁定、系统读取或桥接失败时同步抛异常；当前线程可能被阻塞。原有 Promise 方法保留，同步方法不等待异步保存，Cookie 示例见 [通用工具](/common-helper#同步读取与-cookie)。
+
+
+## MQTT 账号密码
+
+`GetCredential` 与 Android 一致，提供 `MQTT_USERNAME_KEY = "mqtt_username"`、`MQTT_PASSWORD_KEY = "mqtt_password"`。`setMqttCredential(_:password:)` 依次写入，`getMqttUsername()`、`getMqttPassword()` 分别读取 Keychain。支持空值、Unicode、空格和下划线，不拆分或 Base64 解码、不请求网络。两项不是事务，失败应停止连接并重试完整保存。
+
+ObjC 类 `AjaxJSGetCredential`，NativeScript 方法 `setMqttCredentialPassword(username, password)`、`getMqttUsername()`、`getMqttPassword()` 均返回 CryptoResult；先检查 error，保存成功 value=true，读取缺失 value=null。统一 TS 三方法及同步阻塞、清理规则见 [通用工具](/common-helper#mqtt-账号密码存取)。旧 getCredential 方法已移除，Token 接口保留。
+
+
+## 删除及客户端认证 Token
+
+`AjaxJSGetCredential.removeUserToken()`、`removeMqttCredential()` 分别删除两类安全项，未找到也成功，两项非事务；`CLIENT_CREDENTIAL_KEY = "client_credential"` 用于独立的客户端认证 Token。`saveClientCredential(token)`、`getClientCredential()`、`removeClientCredential()` 只操作该 Keychain 项。成功保存/删除 value=true，读取缺失 value=null，空字符串保留，失败 error。
+
+用户保存选择子现为 `saveUserToken:refreshToken:`，NativeScript 方法名 `saveUserTokenRefreshToken`，旧 saveUserTokenKey 名称移除。Token 的异步与同步读取保留。统一 TS 客户端及删除方法为同步接口，须先完成在途保存再删除，说明见 [通用工具](/common-helper#客户端认证-token)。
+
+
+## AES 密钥字符串
+
+`AjaxJSGetCredential` 增加 `AES_KEY_KEY = "AES_KEY"` 以及 `saveAesKey(token)`、`getAesKey()`、`removeAesKey()`，同步通过 SecureStorage 保存/读取/删除字符串。每项最多 65536 UTF-8 字节，允许空字符串；成功保存/删除 value=true，读取缺失 value=null，失败设置 error。无 Base64/AES 长度校验、不执行 HKDF 或导入别名；删除不会影响已有 AES 加解密密钥。参数、使用示例及与 importAesKey 的区别见 [通用工具](/common-helper#aes-密钥字符串缓存)。

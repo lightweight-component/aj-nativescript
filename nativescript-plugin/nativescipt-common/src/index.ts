@@ -7,3 +7,5 @@ export * from './robot-key.js';
 export { confirm, copyToClipboard, getFromClipboard } from './common-helper.js';
 export type { ConfirmOptions, ConfirmPosition } from './common-helper.js';
 export * from './secure-storage.js';
+export * from './user-token.js';
+export * from './credential.js';
